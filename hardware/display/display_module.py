@@ -1,24 +1,19 @@
 #!/usr/bin/env python3
-"""SNIN Display Devices — M5Stack / TTGO T-Display / LilyGO T-Watch / Waveshare.
+"""SNIN Display Devices v0.6 — M5Stack / TTGO T-Display / LilyGO T-Watch.
 
-Эти устройства = ESP32 + экран + кнопки + батарея.
-Роль в рое: визуальный терминал для DAO-голосования и статуса.
+Дисплей = ESP32 + экран + кнопки + батарея.
+Роль: DAO-терминал + dashboard телеметрии.
 
-Что умеют:
-1. Показывать список ESP32-сенсоров в рое
-2. DAO-голосование: вопрос на экране → кнопки Да/Нет
-3. Статус подключения: bridge / relay / mesh
-4. Личные метрики агента
+Что умеет v0.6:
+1. Список ESP32 в рое (kind:31000 телеметрия в реальном времени)
+2. DAO-голосование: вопрос → Да/Нет → kind:31002 команда
+3. Статус bridge/relay/mesh
+4. Алерты устройств (kind:31007) — красный экран с предупреждением
 
-Дисплей-стек:
-  MicroPython: framebuf + machine.SPI + драйвер дисплея
-  C++ (опционально): LVGL — 8KB RAM, анимации, кнопки
-
-Поддерживаемые дисплеи:
-  - ILI9341 (320x240) — M5Stack
+Драйверы:
+  - PC симулятор (pygame, для разработки)
   - ST7789 (170x320) — TTGO T-Display
-  - ST7735 (128x160) — TinyPICO
-  - SSD1306 (128x64) — OLED (текстовый режим)
+  - ILI9341 (320x240) — M5Stack
 """
 
 from __future__ import annotations
@@ -28,261 +23,345 @@ import json
 import time
 import logging
 from typing import Callable
+from dataclasses import dataclass, field
 
 logger = logging.getLogger("snin.display")
 
 
-# ─── Абстрактный дисплей ───────────────────────────────────────
-class Display(abc.ABC):
-    """Абстрактный класс для любого дисплея в рое."""
+# ─── Data models ───────────────────────────────────────────────
+@dataclass
+class DeviceTelemetry:
+    """Телеметрия одного ESP32 на экране."""
+    device_id: str
+    temp: float = 0.0
+    hum: float = 0.0
+    battery: int = 100
+    last_seen: float = 0.0
+    online: bool = False
 
+    def age_seconds(self) -> float:
+        return time.time() - self.last_seen if self.last_seen else 999
+
+
+@dataclass
+class DAOProposal:
+    """Вопрос для голосования."""
+    title: str
+    description: str = ""
+    proposal_id: str = ""
+    votes_for: int = 0
+    votes_against: int = 0
+    deadline: float = 0.0
+
+
+@dataclass
+class AlertDisplay:
+    """Алерт для отображения на экране."""
+    device_id: str
+    alert_type: str
+    severity: str
+    message: str
+    timestamp: float = 0.0
+    acknowledged: bool = False
+
+
+# ─── Абстрактный дисплей ───────────────────────────────────────
+class DisplayDriver(abc.ABC):
     @abc.abstractmethod
     def clear(self):
         ...
 
     @abc.abstractmethod
-    def text(self, text: str, x: int, y: int, color: tuple[int, int, int] = (255, 255, 255)):
+    def text(self, text: str, x: int, y: int, color: tuple = (255, 255, 255)):
         ...
 
     @abc.abstractmethod
     def show(self):
         ...
 
-    @property
     @abc.abstractmethod
-    def width(self) -> int:
-        ...
+    def width(self) -> int: ...
 
-    @property
     @abc.abstractmethod
-    def height(self) -> int:
-        ...
+    def height(self) -> int: ...
 
 
-# ─── MicroPython framebuf (ESP32 + SPI LCD) ─────────────────────
-class MicroPythonFramebufDisplay(Display):
-    """Для MicroPython на ESP32 с framebuf + SPI.
+# ─── PC симулятор ──────────────────────────────────────────────
+class PCDisplaySimulator(DisplayDriver):
+    """Симулятор дисплея на PC через pygame."""
 
-    Подходит: ILI9341, ST7789, ST7735, SSD1306.
-
-    Пример использования на ESP32:
-        import snin_display
-        d = snin_display.MicroPythonFramebufDisplay()
-        d.show_swarm([{"device_id": "sensor_01", "temp": 23.5}])
-    """
-
-    def __init__(self, width: int = 320, height: int = 240, spi_id: int = 1,
-                 cs: int = 5, dc: int = 17, rst: int = 16, bl: int = 4,
-                 driver: str = "ili9341"):
-        self._width = width
-        self._height = height
-        self._driver_name = driver
+    def __init__(self, width: int = 320, height: int = 240, scale: float = 2.0):
+        self._w = width
+        self._h = height
+        self._scale = scale
+        self._surface = None
 
         try:
-            import machine
-            import framebuf
-
-            self._spi = machine.SPI(spi_id, baudrate=40000000, sck=machine.Pin(18),
-                                    mosi=machine.Pin(23), miso=machine.Pin(19))
-            self._cs = machine.Pin(cs, machine.Pin.OUT)
-            self._dc = machine.Pin(dc, machine.Pin.OUT)
-            self._rst = machine.Pin(rst, machine.Pin.OUT)
-            self._bl = machine.Pin(bl, machine.Pin.OUT)
-            self._bl.value(1)  # подсветка вкл
-
-            self._buf = framebuf.FrameBuffer(
-                bytearray(width * height * 2), width, height, framebuf.RGB565
-            )
-            self._fb = self._buf
-            self._ready = True
-        except Exception as e:
-            logger.warning(f"Display init failed: {e}")
-            self._ready = False
+            import pygame
+            pygame.init()
+            self._surface = pygame.Surface((width, height))
+            self._window = pygame.display.set_mode((
+                int(width * scale), int(height * scale)
+            ))
+            pygame.display.set_caption("SNIN Display v0.6")
+            self._font = pygame.font.Font(None, 24)
+            self._small_font = pygame.font.Font(None, 16)
+        except ImportError:
+            logger.warning("pygame not installed — display simulation disabled")
 
     def clear(self):
-        if self._ready:
-            self._fb.fill(0)
+        if self._surface:
+            self._surface.fill((0, 0, 0))
 
-    def text(self, text: str, x: int, y: int, color: tuple = None):
-        if self._ready:
-            c = color or (255, 255, 255)
-            color565 = ((c[0] >> 3) << 11) | ((c[1] >> 2) << 5) | (c[2] >> 3)
-            self._fb.text(text, x, y, color565)
+    def text(self, text: str, x: int, y: int, color: tuple = (255, 255, 255)):
+        if self._surface:
+            import pygame
+            c = pygame.Color(*color)
+            rendered = self._font.render(text, True, c)
+            self._surface.blit(rendered, (x, y))
+
+    def small_text(self, text: str, x: int, y: int, color: tuple = (200, 200, 200)):
+        if self._surface:
+            import pygame
+            c = pygame.Color(*color)
+            rendered = self._small_font.render(text, True, c)
+            self._surface.blit(rendered, (x, y))
 
     def show(self):
-        if self._ready:
-            pass  # Отправка buf на дисплей — через драйвер
+        if self._surface:
+            import pygame
+            scaled = pygame.transform.scale(self._surface, (
+                int(self._w * self._scale), int(self._h * self._scale)
+            ))
+            self._window.blit(scaled, (0, 0))
+            pygame.display.flip()
 
-    @property
     def width(self) -> int:
-        return self._width
+        return self._w
 
-    @property
     def height(self) -> int:
-        return self._height
+        return self._h
 
-    # ── SNIN-specific: дашборд роя ─────────────────────────────
-    def show_swarm(self, devices: list[dict]):
-        """Главный экран: список устройств в рое."""
-        self.clear()
 
-        # Заголовок
-        self.text("SNIN SWARM", 10, 10, (0, 212, 255))
-        y = 35
+# ─── Dashboard ─────────────────────────────────────────────────
+class DAODashboard:
+    """Основной экран: список ESP32 + DAO голосование + алерты."""
 
-        for d in devices[:8]:  # максимум 8 на экране
-            did = d.get("device_id", "?")[:16]
-            temp = d.get("payload", {}).get("temp", "?")
-            batt = d.get("payload", {}).get("batt", "?")
-            color = (100, 255, 100) if (batt != "?" and batt > 20) else (255, 100, 100)
-            self.text(f"{did}  {temp}C  batt:{batt}%", 15, y, color)
-            y += 28
+    def __init__(self, display: DisplayDriver, relay_url: str = "ws://localhost:8198"):
+        self.display = display
+        self.relay_url = relay_url
+        self.devices: dict[str, DeviceTelemetry] = {}
+        self.alerts: list[AlertDisplay] = []
+        self.proposals: list[DAOProposal] = []
+        self._page = 0  # 0=devices, 1=alerts, 2=dao
+        self._last_refresh = 0
 
-        self.text(f"Total: {len(devices)} devices", 10, self._height - 20, (100, 100, 100))
-        self.show()
+    def add_telemetry(self, device_id: str, temp: float, hum: float, batt: int):
+        """Обновить телеметрию устройства."""
+        self.devices[device_id] = DeviceTelemetry(
+            device_id=device_id,
+            temp=temp,
+            hum=hum,
+            battery=batt,
+            last_seen=time.time(),
+            online=True,
+        )
 
-    def show_dao_proposal(self, proposal: dict):
-        """Экран DAO-голосования: вопрос + кнопки Да/Нет."""
-        self.clear()
-        self.text("DAO VOTE", 10, 10, (255, 200, 0))
+    def add_alert(self, device_id: str, alert_type: str,
+                  severity: str, message: str):
+        """Добавить алерт на экран."""
+        self.alerts.insert(0, AlertDisplay(
+            device_id=device_id,
+            alert_type=alert_type,
+            severity=severity,
+            message=message,
+            timestamp=time.time(),
+        ))
+        # Оставляем последние 10
+        self.alerts = self.alerts[:10]
 
-        title = proposal.get("title", "?")[:30]
-        self.text(title, 10, 45, (255, 255, 255))
+    def render(self):
+        """Отрисовать текущую страницу."""
+        self.display.clear()
+        self._render_header()
 
-        desc = proposal.get("description", "")[:120]
-        y = 80
-        for line in [desc[i:i+28] for i in range(0, len(desc), 28)]:
-            self.text(line, 15, y, (200, 200, 200))
-            y += 20
+        if self._page == 0:
+            self._render_devices()
+        elif self._page == 1:
+            self._render_alerts()
+        elif self._page == 2:
+            self._render_dao()
 
-        # Кнопки
-        self.text("[ YES ]", 40, self._height - 50, (100, 255, 100))
-        self.text("[ NO  ]", self._width - 120, self._height - 50, (255, 100, 100))
+        self._render_footer()
+        self.display.show()
 
-        self.show()
+    def _render_header(self):
+        self.display.text("SNIN NETWORK", 5, 5, (0, 180, 255))
+        self.display.small_text(
+            f"Devices: {len(self.devices)}  Alerts: {len(self.alerts)}",
+            5, 25, (150, 150, 150),
+        )
 
-    def show_status(self, bridge_ok: bool, mesh_ok: bool, relay_ok: bool):
-        """Экран статуса соединений."""
-        self.clear()
-        self.text("SNIN STATUS", 10, 10, (0, 212, 255))
+    def _render_devices(self):
         y = 45
+        self.display.small_text("=== DEVICES ===", 5, y, (255, 255, 0))
+        y += 15
 
-        statuses = [
-            ("Bridge", bridge_ok),
-            ("Mesh", mesh_ok),
-            ("Relay", relay_ok),
-        ]
-        for name, ok in statuses:
-            color = (100, 255, 100) if ok else (255, 100, 100)
-            self.text(f"{'●' if ok else '○'} {name}", 20, y, color)
-            y += 30
-
-        self.show()
-
-
-# ─── PC эмуляция дисплея (pygame) ──────────────────────────────
-class PCDisplaySimulator:
-    """Эмулирует дисплей на PC для отладки без ESP32.
-
-    Usage:
-        sim = PCDisplaySimulator()
-        sim.show_swarm([{"device_id": "test_01", "payload": {"temp": 23.5}}])
-        sim.close()
-    """
-
-    def __init__(self, width: int = 320, height: int = 240):
-        self._width = width
-        self._height = height
-        self._running = False
-
-    def start(self):
-        import pygame
-        pygame.init()
-        self._screen = pygame.display.set_mode((self._width, self._height))
-        self._font = pygame.font.Font(None, 24)
-        self._running = True
-        logger.info(f"PC display simulator started: {self._width}x{self._height}")
-
-    def show_swarm(self, devices: list[dict]):
-        if not self._running:
+        if not self.devices:
+            self.display.text("No devices", 20, y, (150, 150, 150))
             return
-        import pygame
-        self._screen.fill((10, 10, 10))
 
-        y = 10
-        title = self._font.render("SNIN SWARM (SIM)", True, (0, 212, 255))
-        self._screen.blit(title, (10, y))
-        y += 30
+        for did, dev in sorted(self.devices.items())[:8]:
+            age = dev.age_seconds()
+            color = (0, 255, 0) if age < 60 else (255, 255, 0) if age < 300 else (255, 0, 0)
+            batt_color = (0, 255, 0) if dev.battery > 30 else (255, 0, 0)
 
-        for d in devices[:8]:
-            did = d.get("device_id", "?")[:16]
-            temp = d.get("payload", {}).get("temp", "?")
-            batt = d.get("payload", {}).get("batt", "?")
-            text = f"{did}  {temp}C  batt:{batt}%"
-            color = (100, 255, 100) if (batt != "?" and batt > 20) else (255, 100, 100)
-            line = self._font.render(text, True, color)
-            self._screen.blit(line, (20, y))
-            y += 30
+            self.display.small_text(
+                f"{dev.device_id[:14]:14s} "
+                f"{dev.temp:5.1f}C {dev.hum:5.1f}% "
+                f"BAT:{dev.battery:3d}%",
+                5, y, color,
+            )
+            y += 15
 
-        total = self._font.render(f"Total: {len(devices)}", True, (100, 100, 100))
-        self._screen.blit(total, (10, self._height - 30))
-        pygame.display.flip()
+    def _render_alerts(self):
+        y = 45
+        self.display.small_text("=== ALERTS ===", 5, y, (255, 100, 100))
+        y += 15
 
-    def show_dao_proposal(self, proposal: dict):
-        if not self._running:
+        if not self.alerts:
+            self.display.text("No active alerts", 20, y, (0, 255, 0))
             return
-        import pygame
-        self._screen.fill((10, 10, 10))
 
-        title = self._font.render(f"DAO: {proposal.get('title', '?')}", True, (255, 200, 0))
-        self._screen.blit(title, (10, 10))
+        for alert in self.alerts[:6]:
+            color = (255, 0, 0) if alert.severity == "critical" else \
+                    (255, 100, 0) if alert.severity == "high" else (255, 255, 0)
+            self.display.small_text(
+                f"[{alert.severity.upper():8s}] {alert.device_id[:10]:10s}: "
+                f"{alert.message[:20]:20s}",
+                5, y, color,
+            )
+            y += 15
 
-        desc = proposal.get("description", "")[:100]
-        y = 50
-        for line in [desc[i:i-30] for i in range(0, len(desc), 30)]:
-            line_r = self._font.render(line, True, (200, 200, 200))
-            self._screen.blit(line_r, (15, y))
-            y += 25
+    def _render_dao(self):
+        y = 45
+        self.display.small_text("=== DAO VOTING ===", 5, y, (100, 255, 100))
+        y += 15
 
-        yes = self._font.render("[ YES ]", True, (100, 255, 100))
-        self._screen.blit(yes, (40, self._height - 50))
-        no = self._font.render("[ NO ]", True, (255, 100, 100))
-        self._screen.blit(no, (self._width - 120, self._height - 50))
-        pygame.display.flip()
+        if not self.proposals:
+            self.display.text("No active proposals", 20, y, (150, 150, 150))
+            return
 
-    def close(self):
-        import pygame
-        pygame.quit()
-        self._running = False
+        for prop in self.proposals[:3]:
+            self.display.text(prop.title[:25], 10, y, (255, 255, 255))
+            y += 15
+            total = prop.votes_for + prop.votes_against
+            if total > 0:
+                pct = int(prop.votes_for / total * 100)
+                self.display.small_text(
+                    f"For: {prop.votes_for}  Against: {prop.votes_against}  "
+                    f"({pct}% support)",
+                    10, y, (200, 200, 200),
+                )
+                y += 15
+            y += 5
+
+    def _render_footer(self):
+        h = self.display.height()
+        pages = ["Devices", "Alerts", "DAO"]
+        nav = "  ".join(
+            f"[{p.upper()}]" if i == self._page else p
+            for i, p in enumerate(pages)
+        )
+        self.display.small_text(nav, 5, h - 15, (100, 100, 100))
+
+    def next_page(self):
+        self._page = (self._page + 1) % 3
+
+    def prev_page(self):
+        self._page = (self._page - 1) % 3
+
+    def update_from_relay(self, events: list[dict]):
+        """Обновить данные из событий relay-v2."""
+        for ev in events:
+            kind = ev.get("kind")
+            if kind == 31000:
+                tags = dict(t[:2] for t in ev.get("tags", []))
+                did = tags.get("d", "unknown")
+                try:
+                    content = json.loads(ev.get("content", "{}"))
+                except json.JSONDecodeError:
+                    content = {}
+                self.add_telemetry(
+                    device_id=did,
+                    temp=content.get("temp", 0),
+                    hum=content.get("hum", 0),
+                    batt=content.get("battery", 100),
+                )
+            elif kind == 31007:
+                tags = dict(t[:2] for t in ev.get("tags", []))
+                did = tags.get("d", "unknown")
+                alert_type = tags.get("alert", "unknown")
+                severity = tags.get("severity", "low")
+                try:
+                    content = json.loads(ev.get("content", "{}"))
+                except json.JSONDecodeError:
+                    content = {}
+                self.add_alert(
+                    device_id=did,
+                    alert_type=alert_type,
+                    severity=severity,
+                    message=content.get("message", ""),
+                )
 
 
-# ─── Self-test ──────────────────────────────────────────────────
-if __name__ == "__main__":
-    print("=" * 50)
-    print("SNIN Display Module — Self Test (PC simulator)")
-    print("=" * 50)
+def _self_test():
+    logging.basicConfig(level=logging.INFO)
 
-    sim = PCDisplaySimulator()
-    sim.start()
+    display = PCDisplaySimulator(width=320, height=240)
+    dashboard = DAODashboard(display)
 
-    test_devices = [
-        {"device_id": "sensor_kitchen", "payload": {"temp": 23.5, "batt": 85}},
-        {"device_id": "sensor_garden", "payload": {"temp": 18.2, "batt": 45}},
-        {"device_id": "sensor_roof", "payload": {"temp": 31.0, "batt": 12}},
-        {"device_id": "m5stack_01", "payload": {"temp": 26.0, "batt": 90}},
+    # Симуляция телеметрии
+    dashboard.add_telemetry("sensor_01", 23.5, 60.2, 85)
+    dashboard.add_telemetry("sensor_02", 18.2, 45.0, 70)
+    dashboard.add_telemetry("sensor_03", 30.0, 55.0, 12)  # low battery
+    assert len(dashboard.devices) == 3
+    print("  ✅ 3 devices added")
+
+    # Симуляция алерта
+    dashboard.add_alert("sensor_03", "battery_low", "high", "Battery 12%")
+    assert len(dashboard.alerts) == 1
+    print("  ✅ Alert added")
+
+    # Симуляция DAO
+    dashboard.proposals.append(DAOProposal(
+        title="Increase polling interval",
+        votes_for=5,
+        votes_against=2,
+    ))
+    print("  ✅ DAO proposal added")
+
+    # Рендер страниц
+    for page in range(3):
+        dashboard._page = page
+        dashboard.render()
+        print(f"  ✅ Rendered page {page}")
+
+    # Обновление из relay
+    events = [
+        {"kind": 31000, "tags": [["d", "sensor_04"]],
+         "content": json.dumps({"temp": 26.0, "hum": 50, "battery": 90})},
+        {"kind": 31007, "tags": [["d", "sensor_01"], ["alert", "temp_high"],
+                                 ["severity", "high"]],
+         "content": json.dumps({"message": "Temperature 52C"})},
     ]
+    dashboard.update_from_relay(events)
+    assert "sensor_04" in dashboard.devices
+    assert len(dashboard.alerts) == 2
+    print("  ✅ Relay events processed")
 
-    print("Showing swarm...")
-    sim.show_swarm(test_devices)
+    print("\n✅ ALL DISPLAY TESTS PASSED")
 
-    proposal = {
-        "title": "Increase measurement freq on sensor_roof?",
-        "description": "Current 60s. Proposal: 30s due to high temp variance.",
-    }
-    print("Showing DAO proposal...")
-    sim.show_dao_proposal(proposal)
 
-    import time
-    time.sleep(5)
-    sim.close()
-    print("✅ Display self-test PASSED")
+if __name__ == "__main__":
+    _self_test()
