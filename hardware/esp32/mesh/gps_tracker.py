@@ -3,16 +3,16 @@
 
 Для LilyGO T-Watch, ESP32 + NEO-6M/GPS модулей.
 
-Публикует kind:31006 (Device Location) в relay-v2.
+Публикует kind:8015 (Device Location) в relay-v2.
 
 Поток:
-  GPS (NMEA) → ESP32 → kind:31006 → relay-v2 → DAO Pilot / Dashboard
+  GPS (NMEA) → ESP32 → kind:8015 → relay-v2 → DAO Pilot / Dashboard
                                        ↓
-                              kind:31002 (geofence command)
+                              kind:8012 (geofence command)
 
-kind:31006 format:
+kind:8015 format:
   {
-    "kind": 31006,
+    "kind": 8015,
     "pubkey": "<bridge_pk>",
     "tags": [
       ["d", "<device_id>"],
@@ -197,13 +197,13 @@ class GPSTracker:
 
         return events
 
-    def to_kind_31006(self) -> dict:
-        """Создать kind:31006 (Device Location) событие."""
+    def to_kind_8015(self) -> dict:
+        """Создать kind:8015 (Device Location) событие."""
         fix = self._last_fix
         self._seq += 1
 
         return {
-            "kind": 31006,
+            "kind": 8015,
             "pubkey": self.device_id,
             "tags": [
                 ["d", self.device_id],
@@ -245,11 +245,11 @@ def _self_test():
     assert fix.lat != 0
     print(f"  ✅ GPS fix: {fix.lat:.4f}, {fix.lon:.4f} ({fix.satellites} sats)")
 
-    # 2. kind:31006
-    event = tracker.to_kind_31006()
-    assert event["kind"] == 31006
+    # 2. kind:8015
+    event = tracker.to_kind_8015()
+    assert event["kind"] == 8015
     assert event["tags"][1][1] is not None
-    print(f"  ✅ kind:31006: lat={event['tags'][1][1]} lon={event['tags'][2][1]}")
+    print(f"  ✅ kind:8015: lat={event['tags'][1][1]} lon={event['tags'][2][1]}")
 
     # 3. Geofence
     tracker.add_geofence(GeofenceZone(

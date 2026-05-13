@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""SNIN ESP32 — Command Handler for kind:31002.
+"""SNIN ESP32 — Command Handler for kind:8012.
 
 Парсит входящие команды от relay-v2, маршрутизирует по device_id.
 Может работать на bridge (серверная часть) и на ESP32 (клиентская).
 
-kind:31002 format:
+kind:8012 format:
   {
-    "kind": 31002,
+    "kind": 8012,
     "pubkey": "<dao_agent_pk>",
     "tags": [
       ["d", "<device_id>"],
@@ -68,8 +68,8 @@ class DeviceCommand:
         }
 
     @classmethod
-    def from_kind_31002(cls, event: dict) -> "DeviceCommand | None":
-        """Парсинг Nostr kind:31002 в DeviceCommand."""
+    def from_kind_8012(cls, event: dict) -> "DeviceCommand | None":
+        """Парсинг Nostr kind:8012 в DeviceCommand."""
         try:
             tags = {t[0]: t[1] if len(t) > 1 else "" for t in event.get("tags", [])}
             device_id = tags.get("d", "")
@@ -99,7 +99,7 @@ class DeviceCommand:
             )
 
         except (KeyError, json.JSONDecodeError, ValueError, TypeError) as e:
-            logger.error(f"Failed to parse kind:31002: {e}")
+            logger.error(f"Failed to parse kind:8012: {e}")
             return None
 
 
@@ -177,7 +177,7 @@ class ActionRegistry:
 class CmdHandler:
     """Высокоуровневый обработчик команд ESP32.
 
-    Принимает сырые events kind:31002, валидирует, исполняет.
+    Принимает сырые events kind:8012, валидирует, исполняет.
     """
 
     def __init__(self, device_id: str | None = None):
@@ -188,8 +188,8 @@ class CmdHandler:
         self._paused: set[str] = set()
 
     def handle(self, event: dict) -> dict:
-        """Входная точка: принять kind:31002, выполнить."""
-        cmd = DeviceCommand.from_kind_31002(event)
+        """Входная точка: принять kind:8012, выполнить."""
+        cmd = DeviceCommand.from_kind_8012(event)
         if cmd is None:
             return {"ok": False, "error": "invalid command format"}
 
@@ -231,18 +231,18 @@ def _self_test():
 
     handler = CmdHandler(device_id="sensor_01")
 
-    # 1. Парсинг kind:31002
+    # 1. Парсинг kind:8012
     event = {
-        "kind": 31002,
+        "kind": 8012,
         "pubkey": "dao_agent_01",
         "tags": [["d", "sensor_01"], ["cmd", "set_interval"], ["seq", "1"]],
         "content": json.dumps({"seconds": 60}),
     }
-    cmd = DeviceCommand.from_kind_31002(event)
+    cmd = DeviceCommand.from_kind_8012(event)
     assert cmd is not None
     assert cmd.action == CommandAction.SET_INTERVAL
     assert cmd.params["seconds"] == 60
-    print("  ✅ Parse kind:31002")
+    print("  ✅ Parse kind:8012")
 
     # 2. Исполнение
     result = handler.handle(event)
@@ -257,7 +257,7 @@ def _self_test():
 
     # 4. set_gpio
     gpio_event = {
-        "kind": 31002,
+        "kind": 8012,
         "pubkey": "dao_agent_01",
         "tags": [["d", "sensor_01"], ["cmd", "set_gpio"], ["seq", "2"]],
         "content": json.dumps({"pin": 4, "state": 1}),
@@ -269,7 +269,7 @@ def _self_test():
 
     # 5. read_sensor
     read_event = {
-        "kind": 31002,
+        "kind": 8012,
         "pubkey": "dao_agent_01",
         "tags": [["d", "sensor_01"], ["cmd", "read_sensor"], ["seq", "3"]],
         "content": json.dumps({"sensor": "temperature"}),
@@ -280,7 +280,7 @@ def _self_test():
 
     # 6. Reboot
     reboot_event = {
-        "kind": 31002,
+        "kind": 8012,
         "pubkey": "dao_agent_01",
         "tags": [["d", "sensor_01"], ["cmd", "reboot"], ["seq", "4"]],
         "content": json.dumps({"delay_ms": 500}),
@@ -291,7 +291,7 @@ def _self_test():
 
     # 7. Unknown action
     bad_event = {
-        "kind": 31002,
+        "kind": 8012,
         "pubkey": "dao_agent_01",
         "tags": [["d", "sensor_01"], ["cmd", "fly_to_moon"], ["seq", "5"]],
         "content": "{}",
@@ -303,7 +303,7 @@ def _self_test():
     # 8. Pause/Resume
     handler._paused.add("sensor_01")
     pause_check = {
-        "kind": 31002,
+        "kind": 8012,
         "pubkey": "dao_agent_01",
         "tags": [["d", "sensor_01"], ["cmd", "read_sensor"], ["seq", "6"]],
         "content": "{}",
@@ -313,7 +313,7 @@ def _self_test():
     print("  ✅ Pause blocks commands")
 
     resume_event = {
-        "kind": 31002,
+        "kind": 8012,
         "pubkey": "dao_agent_01",
         "tags": [["d", "sensor_01"], ["cmd", "resume"], ["seq", "7"]],
         "content": "{}",
@@ -324,7 +324,7 @@ def _self_test():
 
     # 9. Wrong device_id
     wrong_event = {
-        "kind": 31002,
+        "kind": 8012,
         "pubkey": "dao_agent_01",
         "tags": [["d", "other_sensor"], ["cmd", "reboot"], ["seq", "1"]],
         "content": "{}",

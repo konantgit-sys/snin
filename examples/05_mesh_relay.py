@@ -2,7 +2,7 @@
 Пример 5: relay-v2 интеграция — полный цикл от ESP32 до Nostr.
 
 Показывает, как ESP32 -> Bridge -> AgentMesh -> relay-v2 -> Nostr.
-Вся цепочка kind:31000 (Telemetry) -> kind:31002 (Command).
+Вся цепочка kind:8010 (Telemetry) -> kind:8012 (Command).
 """
 
 import json
@@ -16,9 +16,9 @@ def demo_telemetry():
 
     handler = ESP32DeviceHandler()
 
-    # ESP32 прислал telemetry (kind:31000)
+    # ESP32 прислал telemetry (kind:8010)
     event = {
-        "kind": 31000,
+        "kind": 8010,
         "pubkey": "a1b2c3d4e5f6",
         "tags": [["d", "sensor_kitchen_01"], ["t", "temperature"],
                  ["seq", "42"], ["batt", "85"]],

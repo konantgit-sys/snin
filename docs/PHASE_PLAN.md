@@ -6,7 +6,7 @@
 |-----------|--------|
 | Transport Abstraction (TCP/HTTP/IPFS/ESP-NOW) | ✅ 290 строк |
 | Bridge ESP-NOW → AgentMesh + Ed25519 + WAL | ✅ 288 строк |
-| relay-v2 plugin (kind:31000-31002) | ✅ 241 строка |
+| relay-v2 plugin (kind:8010-8012) | ✅ 241 строка |
 | ESP32 прошивка (DHT22 + подпись + ESP-NOW) | ✅ 256 строк |
 | ESP32 bridge прошивка (ESP-NOW → UART) | ✅ 188 строк |
 | Симулятор ESP32 + self-test | ✅ 300 строк |
@@ -51,7 +51,7 @@
 - **BLE** — LilyGO T-Watch, телефон
 - **mDNS Discovery** — ESP32 сам находит bridge
 - **OTA Update** — обновление прошивок по воздуху
-- **Device Command Loop (kind:31002)** — DAO → ESP32
+- **Device Command Loop (kind:8012)** — DAO → ESP32
 
 **Зачем:** 70% use-cases без этого не работают (поле, лес, носимые устройства).
 
@@ -89,6 +89,6 @@
 
 1. **LoRa + BLE** — закрыть транспортные дыры
 2. **OTA + mDNS** — чтобы прошивки обновлялись сами
-3. **Device Command (31002)** — чтобы DAO мог управлять ESP32
+3. **Device Command (8012)** — чтобы DAO мог управлять ESP32
 
 После этого — Фаза 4 (рой сам принимает решения).

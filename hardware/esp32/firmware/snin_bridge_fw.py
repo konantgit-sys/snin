@@ -5,7 +5,7 @@ SNIN ESP32 — Firmware: ESP-NOW ↔ UART Bridge (duplex v0.6)
 
   Sensor ESP32 ──ESP-NOW──→ Bridge ESP32 ──UART──→ bridge.py
 
-  Sensor ESP32 ←──ESP-NOW── Bridge ESP32 ←──UART── bridge.py (kind:31002)
+  Sensor ESP32 ←──ESP-NOW── Bridge ESP32 ←──UART── bridge.py (kind:8012)
 
 Прошивка: MicroPython v1.23+
 """

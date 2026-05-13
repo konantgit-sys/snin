@@ -3,7 +3,7 @@
 
 RPi — центральный узел. На нём работают:
   1. Bridge (ESP-NOW -> AgentMesh)
-  2. Agent (подписан на kind:31000, публикует решения)
+  2. Agent (подписан на kind:8010, публикует решения)
   3. mDNS announcer (чтобы ESP32 сами находили RPi)
   4. HDMI dashboard (опционально)
 

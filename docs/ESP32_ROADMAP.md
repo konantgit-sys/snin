@@ -120,12 +120,12 @@ p2p-agent-mesh v0.5.0 (133 тестов)
 | Компонент | Описание |
 |-----------|----------|
 | **`relay-v2/bridge/esp32_handler.py`** | Новый модуль в relay-v2: приём ESP-NOW событий, конвертация в Nostr kind |
-| **`relay-v2/bridge/device_nip.md`** | NIP для устройств (kind:31000 — Device Telemetry) |
+| **`relay-v2/bridge/device_nip.md`** | NIP для устройств (kind:8010 — Device Telemetry) |
 | **`docs/BRIDGE_ARCHITECTURE.md`** | Схема: ESP32 → bridge → relay-v2 → DAO |
 
 **Поток данных:**
 ```
-ESP32 → ESP-NOW → bridge.py → relay-v2 → kind:31000 → DAO voting → kind:39002
+ESP32 → ESP-NOW → bridge.py → relay-v2 → kind:8010 → DAO voting → kind:39002
                                                                           ↓
                                                             ESP32 получает команду
 ```

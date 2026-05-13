@@ -7,9 +7,9 @@ RPi может выполнять 3 роли одновременно:
 3. Display — HDMI dashboard телеметрии
 
 В v0.6 добавлено:
-- CommandConsumer: bridge подписан на kind:31002, шлёт команды ESP32
+- CommandConsumer: bridge подписан на kind:8012, шлёт команды ESP32
 - AlertManager: релей алертов от ESP32 в relay-v2
-- Relay subscription: читает kind:31000 с реального relay
+- Relay subscription: читает kind:8010 с реального relay
 
 Usage:
     python3 raspberry_node.py --role bridge+display
@@ -100,7 +100,7 @@ class RPiNode:
             agent_id=self.node_id,
         )
 
-        # Consumer: подписка на kind:31002
+        # Consumer: подписка на kind:8012
         self._consumer = CommandConsumer(
             device_id=self.node_id,
             transport=TransportType.ESP_NOW,
@@ -139,7 +139,7 @@ class RPiNode:
 
     # ─── Relay subscription ───────────────────────────
     async def subscribe_telemetry(self):
-        """Подписка на kind:31000 с relay-v2 для мониторинга."""
+        """Подписка на kind:8010 с relay-v2 для мониторинга."""
         import aiohttp
 
         devices = {}
@@ -157,7 +157,7 @@ class RPiNode:
                                 # If there's a device handler, use it
                                 if "events" in data:
                                     for ev in data["events"]:
-                                        if ev.get("kind") == 31000:
+                                        if ev.get("kind") == 8010:
                                             did = dict(ev.get("tags", [])).get("d", "?")
                                             devices[did] = {
                                                 "last_seen": time.time(),
@@ -176,7 +176,7 @@ class RPiNode:
             if stats["total_alerts"] > 0:
                 logger.debug(f"Alerts: {stats}")
 
-            # В реальности: читать kind:31007 из relay,
+            # В реальности: читать kind:8011 из relay,
             # форвардить в Telegram / email / т.д.
 
             await asyncio.sleep(30)

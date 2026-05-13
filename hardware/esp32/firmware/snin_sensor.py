@@ -2,7 +2,7 @@
 SNIN ESP32 — Firmware: Sensor Node (v0.6 с поддержкой команд)
 
 Прошивка для ESP32 с датчиком. Читает сенсор, подписывает Ed25519,
-шлёт по ESP-NOW на bridge, принимает команды (kind:31002) по ESP-NOW.
+шлёт по ESP-NOW на bridge, принимает команды (kind:8012) по ESP-NOW.
 
 Прошивка: MicroPython v1.23+
 Датчик: DHT22 (температура + влажность)
@@ -11,7 +11,7 @@ SNIN ESP32 — Firmware: Sensor Node (v0.6 с поддержкой команд)
 Поток:
     DHT22 → ESP32 → ESP-NOW (250B) → ESP32-bridge → bridge.py → relay-v2
                                                           │
-    ESP32 ◄── ESP-NOW (command) ◄── bridge.py ◄────── kind:31002
+    ESP32 ◄── ESP-NOW (command) ◄── bridge.py ◄────── kind:8012
 
 Установка:
     1. Установить MicroPython на ESP32
@@ -54,7 +54,7 @@ class CommandAction:
 
 
 class CommandHandler:
-    """Обработчик команд на ESP32. Вызывается при получении kind:31002."""
+    """Обработчик команд на ESP32. Вызывается при получении kind:8012."""
 
     def __init__(self, sensor_node):
         self.node = sensor_node
@@ -212,7 +212,7 @@ class ESPNOWDuplex:
     """ESP-NOW интерфейс с поддержкой отправки и приёма.
 
     Отправляет телеметрию на bridge.
-    Принимает команды (kind:31002) от bridge.
+    Принимает команды (kind:8012) от bridge.
     """
     def __init__(self, bridge_mac: bytes):
         import espnow as _espnow

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """SNIN ESP32 — relay-v2 handler for ESP32 device events.
 
-Добавляет поддержку kinds 31000-31002 в relay-v2:
-  - kind:31000 — Device Telemetry (телеметрия от ESP32)
-  - kind:31001 — Device Registration (регистрация нового датчика)
-  - kind:31002 — Device Command (команда от DAO к ESP32)
+Добавляет поддержку kinds 8010-8012 в relay-v2:
+  - kind:8010 — Device Telemetry (телеметрия от ESP32)
+  - kind:8014 — Device Registration (регистрация нового датчика)
+  - kind:8012 — Device Command (команда от DAO к ESP32)
 
 Монтируется как плагин к relay-v2/relay/relay_server_v2.py.
 
@@ -25,10 +25,10 @@ from typing import Any
 logger = logging.getLogger("snin.esp32_relay")
 
 # ─── Device kinds ───────────────────────────────────────────────
-KIND_TELEMETRY = 31000
-KIND_REGISTER = 31001
-KIND_COMMAND = 31002
-KIND_DEVICE_NIP = 31000  # range: 31000-31009 reserved for SNIN devices
+KIND_TELEMETRY = 8010
+KIND_REGISTER = 8014
+KIND_COMMAND = 8012
+KIND_DEVICE_NIP = 8010  # range: 8010-31009 reserved for SNIN devices
 
 
 class DeviceRegistry:
@@ -77,11 +77,11 @@ class ESP32DeviceHandler:
 
     # ── Входящие: телеметрия от ESP32 ────────────────────────────
     def handle_telemetry(self, event: dict) -> dict:
-        """Обработать kind:31000 (Device Telemetry).
+        """Обработать kind:8010 (Device Telemetry).
 
         Формат события (Nostr):
         {
-            "kind": 31000,
+            "kind": 8010,
             "pubkey": "hex_public_key_esp32",
             "tags": [
                 ["d", "sensor_kitchen_01"],       # device_id
@@ -125,11 +125,11 @@ class ESP32DeviceHandler:
 
     # ── Входящие: регистрация ────────────────────────────────────
     def handle_register(self, event: dict) -> dict:
-        """Обработать kind:31001 (Device Registration).
+        """Обработать kind:8014 (Device Registration).
 
         Формат:
         {
-            "kind": 31001,
+            "kind": 8014,
             "pubkey": "hex",
             "tags": [
                 ["d", "sensor_kitchen_01"],
@@ -173,7 +173,7 @@ class ESP32DeviceHandler:
         action: str,
         params: dict | None = None,
     ) -> dict:
-        """Создать kind:31002 (Device Command).
+        """Создать kind:8012 (Device Command).
 
         DAO голосует → команда отправляется через relay-v2 →
         bridge получает → ESP-NOW → ESP32 исполняет.

@@ -23,7 +23,7 @@ SNIN — открытая инфраструктура для роя физич�
 
 ```
 ESP32 (DHT22) ─── ESP-NOW ─── Bridge ─── AgentMesh ─── relay-v2 (Nostr)
-  │                               │           │          kind:31000-31002
+  │                               │           │          kind:8010-8012
   │ LoRa (15km)                   │           │
   │ BLE (10m, T-Watch)            │           │
   │ mDNS (auto-discovery)         │           │
@@ -56,7 +56,7 @@ hardware/
 ├── esp32/
 │   ├── sdk/transport.py     — TCP/HTTP/IPFS/ESP-NOW transport
 │   ├── bridge/bridge.py     — ESP-NOW → AgentMesh + Ed25519 + WAL
-│   ├── relay/device_handler.py — Nostr kinds 31000-31002 plugin
+│   ├── relay/device_handler.py — Nostr kinds 8010-8012 plugin
 │   ├── firmware/
 │   │   ├── snin_sensor.py    — ESP32 DHT22 + Ed25519 + ESP-NOW
 │   │   └── snin_bridge_fw.py — ESP32 bridge (ESP-NOW → UART)
@@ -94,19 +94,19 @@ research/                    — open-source review, crypto stack
 1. DHT22 читает температуру на ESP32
 2. ESP32 подписывает Ed25519, шлёт ESP-NOW (250 байт) / LoRa (64 байта)
 3. Bridge принимает, верифицирует, шлёт в AgentMesh
-4. AgentMesh публикует в relay-v2 (kind:31000)
+4. AgentMesh публикует в relay-v2 (kind:8010)
 5. DAO Pilot видит событие, может голосовать
-6. DAO → kind:31002 → bridge → ESP-NOW → ESP32
+6. DAO → kind:8012 → bridge → ESP-NOW → ESP32
 ```
 
 ## Nostr Kinds
 
 | Kind | Название | Назначение | Статус |
 |------|----------|-----------|--------|
-| 31000 | Device Telemetry | Температура, влажность, батарея | ✅ |
-| 31001 | Device Registration | Регистрация нового ESP32 | ✅ |
-| 31002 | Device Command | Команда от DAO к ESP32 | ⏳ |
-| 31003 | OTA Update | Обновление прошивки | ⏳ |
+| 8010 | Device Telemetry | Температура, влажность, батарея | ✅ |
+| 8014 | Device Registration | Регистрация нового ESP32 | ✅ |
+| 8012 | Device Command | Команда от DAO к ESP32 | ⏳ |
+| 8013 | OTA Update | Обновление прошивки | ⏳ |
 
 ## Статус разработки
 

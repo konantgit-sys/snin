@@ -180,8 +180,8 @@ class AutoBridgeConnector:
       2. mDNS ищет _snin-bridge._tcp.local
       3. Находит bridge, получает IP:port
       4. Подключается по TCP/ESP-NOW
-      5. Регистрируется (kind:31001)
-      6. Начинает слать телеметрию (kind:31000)
+      5. Регистрируется (kind:8014)
+      6. Начинает слать телеметрию (kind:8010)
     """
 
     def __init__(self, device_id: str = "auto_esp32_01"):

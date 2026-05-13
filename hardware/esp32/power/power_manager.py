@@ -111,7 +111,7 @@ class PowerManager:
         return self._last_state
 
     def should_alert(self) -> bool:
-        """Пора ли слать kind:31007?"""
+        """Пора ли слать kind:8011?"""
         st = self.update()
         if st.is_critical and not self._alert_sent_critical:
             self._alert_sent_critical = True

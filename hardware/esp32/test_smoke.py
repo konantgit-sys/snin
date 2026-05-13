@@ -120,7 +120,7 @@ async def test_device_handler():
 
     # Симуляция телеметрии
     event = {
-        "kind": 31000,
+        "kind": 8010,
         "pubkey": "ab" * 32,
         "tags": [
             ["d", "test_sensor_01"],

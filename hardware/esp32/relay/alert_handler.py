@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""SNIN ESP32 — Alert Handler for kind:31007.
+"""SNIN ESP32 — Alert Handler for kind:8011.
 
 Генерирует и обрабатывает алерты устройств.
 
-kind:31007 format:
+kind:8011 format:
   {
-    "kind": 31007,
+    "kind": 8011,
     "pubkey": "<device_pk>",
     "tags": [
       ["d", "<device_id>"],
@@ -72,9 +72,9 @@ class Alert:
     seq: int = 0
     timestamp: float = 0.0
 
-    def to_kind_31007(self) -> dict:
+    def to_kind_8011(self) -> dict:
         return {
-            "kind": 31007,
+            "kind": 8011,
             "pubkey": self.device_id,
             "tags": [
                 ["d", self.device_id],
@@ -136,7 +136,7 @@ class AlertManager:
         return alert
 
     def get_history(self, limit: int = 20) -> list[dict]:
-        return [a.to_kind_31007() for a in self._history[-limit:]]
+        return [a.to_kind_8011() for a in self._history[-limit:]]
 
     def stats(self) -> dict:
         return {
@@ -185,11 +185,11 @@ def _self_test():
     assert a5.severity == Severity.CRITICAL
     print(f"  ✅ {a5.alert_type.value} [{a5.severity.value}]: {a5.message}")
 
-    # 6. kind:31007 format
-    event = a5.to_kind_31007()
-    assert event["kind"] == 31007
+    # 6. kind:8011 format
+    event = a5.to_kind_8011()
+    assert event["kind"] == 8011
     assert event["tags"][1][1] == "battery_critical"
-    print(f"  ✅ kind:31007 format: {event['tags'][1][1]}")
+    print(f"  ✅ kind:8011 format: {event['tags'][1][1]}")
 
     # 7. Stats
     stats = mgr.stats()

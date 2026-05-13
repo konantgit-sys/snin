@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """SNIN ESP32 — Command Consumer для bridge.
 
-bridge подписывается на kind:31002 в relay-v2,
+bridge подписывается на kind:8012 в relay-v2,
 получает команды, маршрутизирует на ESP32.
 
 Поток:
-  relay-v2 ── kind:31002 ──→ command_consumer
+  relay-v2 ── kind:8012 ──→ command_consumer
                                 │
                           ┌─────┴──────┐
                           │  ESP-NOW   │  → ESP32
@@ -36,7 +36,7 @@ class TransportType:
 
 
 class CommandConsumer:
-    """Подписывается на kind:31002, отправляет команды на ESP32.
+    """Подписывается на kind:8012, отправляет команды на ESP32.
 
     В режиме PC-симуляции — логирует и сохраняет.
     В режиме bridge — реально отправляет ESP32 через выбранный транспорт.
@@ -55,9 +55,9 @@ class CommandConsumer:
         self._received: list[dict] = []
 
     async def handle_event(self, event: dict) -> dict:
-        """Обработка входящего kind:31002 от relay-v2."""
+        """Обработка входящего kind:8012 от relay-v2."""
         # Парсим команду
-        cmd = DeviceCommand.from_kind_31002(event)
+        cmd = DeviceCommand.from_kind_8012(event)
         if cmd is None:
             return {"ok": False, "error": "parse failed"}
 
@@ -110,7 +110,7 @@ async def subscribe_to_commands(
     consumer: CommandConsumer,
     poll_interval: float = 5.0,
 ):
-    """Подписка на kind:31002 через polling (для совместимости с relay-v2).
+    """Подписка на kind:8012 через polling (для совместимости с relay-v2).
 
     В production relay-v2 поддерживает subscription push.
     Здесь — fallback polling.
@@ -118,7 +118,7 @@ async def subscribe_to_commands(
     import aiohttp
 
     url = f"{relay_url.rstrip('/')}/events"
-    params = {"kind": 31002, "limit": 10}
+    params = {"kind": 8012, "limit": 10}
 
     last_id = ""
 
@@ -149,7 +149,7 @@ def _self_test():
     consumer = CommandConsumer(device_id="bridge_01", transport=TransportType.ESP_NOW)
 
     event = {
-        "kind": 31002,
+        "kind": 8012,
         "pubkey": "dao_agent_01",
         "tags": [["d", "sensor_01"], ["cmd", "set_interval"], ["seq", "1"]],
         "content": json.dumps({"seconds": 60}),

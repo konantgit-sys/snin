@@ -8,7 +8,7 @@ Bridge принимает Ed25519-подписанные данные от ESP32
   ESP32 (Ed25519) → Bridge (верифицирует Ed25519)
                     → создаёт Nostr event
                     → подписывает Schnorr (секретный ключ bridge)
-                    → публикует kind:31000 в relay-v2
+                    → публикует kind:8010 в relay-v2
 
 Использует: nostr (pip install nostr) — BIP-340 совместимый signer.
 """
@@ -53,7 +53,7 @@ class NostrSigner:
         e = Event(
             event.get("pubkey", self.pubkey),
             event.get("content", ""),
-            kind=event.get("kind", 31000),
+            kind=event.get("kind", 8010),
             tags=event.get("tags", []),
             created_at=event.get("created_at", int(time.time())),
         )
@@ -67,7 +67,7 @@ class NostrSigner:
 
         return event
 
-    def create_kind_31000(
+    def create_kind_8010(
         self,
         device_id: str,
         temp: float,
@@ -76,7 +76,7 @@ class NostrSigner:
         seq: int,
         extra: dict | None = None,
     ) -> dict:
-        """Создать и подписать kind:31000 (Device Telemetry)."""
+        """Создать и подписать kind:8010 (Device Telemetry)."""
         content = {
             "temp": temp,
             "hum": hum,
@@ -87,7 +87,7 @@ class NostrSigner:
         event = {
             "pubkey": self.pubkey,
             "created_at": int(time.time()),
-            "kind": 31000,
+            "kind": 8010,
             "tags": [
                 ["d", device_id],
                 ["t", "temperature"],
@@ -99,18 +99,18 @@ class NostrSigner:
 
         return self.sign_event(event)
 
-    def create_kind_31002(
+    def create_kind_8012(
         self,
         device_id: str,
         action: str,
         params: dict | None = None,
         seq: int = 1,
     ) -> dict:
-        """Создать и подписать kind:31002 (Device Command)."""
+        """Создать и подписать kind:8012 (Device Command)."""
         event = {
             "pubkey": self.pubkey,
             "created_at": int(time.time()),
-            "kind": 31002,
+            "kind": 8012,
             "tags": [
                 ["d", device_id],
                 ["cmd", action],
@@ -143,29 +143,29 @@ def _self_test():
     assert len(signer.pubkey) == 64  # 32 байта в hex
     print(f"  ✅ Key generated: {signer.pubkey[:16]}...")
 
-    # 2. Создание kind:31000
-    event = signer.create_kind_31000(
+    # 2. Создание kind:8010
+    event = signer.create_kind_8010(
         device_id="sensor_test_01",
         temp=23.5,
         hum=60.2,
         battery=85,
         seq=1,
     )
-    assert event["kind"] == 31000
+    assert event["kind"] == 8010
     assert len(event["id"]) == 64
     assert len(event["sig"]) == 128  # 64 байта Schnorr sig
-    print(f"  ✅ kind:31000 signed: id={event['id'][:16]}...")
+    print(f"  ✅ kind:8010 signed: id={event['id'][:16]}...")
 
-    # 3. Создание kind:31002
-    cmd = signer.create_kind_31002(
+    # 3. Создание kind:8012
+    cmd = signer.create_kind_8012(
         device_id="sensor_test_01",
         action="set_interval",
         params={"seconds": 60},
         seq=1,
     )
-    assert cmd["kind"] == 31002
+    assert cmd["kind"] == 8012
     assert cmd["tags"][1][1] == "set_interval"
-    print(f"  ✅ kind:31002 signed: cmd={cmd['tags'][1][1]}")
+    print(f"  ✅ kind:8012 signed: cmd={cmd['tags'][1][1]}")
 
     # 4. Проверка подписи
     assert signer.verify_event(event)
@@ -182,7 +182,7 @@ def _self_test():
                 resp = await ws.receive(timeout=5)
                 data = resp.data
                 if isinstance(data, list) and data[0] == "OK" and data[2] is True:
-                    print(f"  ✅ Published kind:31000 — ACCEPTED!")
+                    print(f"  ✅ Published kind:8010 — ACCEPTED!")
                 else:
                     print(f"  ⚠️ Relay: {data}")
 
@@ -191,7 +191,7 @@ def _self_test():
                 resp2 = await ws.receive(timeout=5)
                 data2 = resp2.data
                 if isinstance(data2, list) and data2[0] == "OK" and data2[2] is True:
-                    print(f"  ✅ Published kind:31002 — ACCEPTED!")
+                    print(f"  ✅ Published kind:8012 — ACCEPTED!")
                 else:
                     print(f"  ⚠️ Relay: {data2}")
 

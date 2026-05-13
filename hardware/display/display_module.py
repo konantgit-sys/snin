@@ -5,10 +5,10 @@
 Роль: DAO-терминал + dashboard телеметрии.
 
 Что умеет v0.6:
-1. Список ESP32 в рое (kind:31000 телеметрия в реальном времени)
-2. DAO-голосование: вопрос → Да/Нет → kind:31002 команда
+1. Список ESP32 в рое (kind:8010 телеметрия в реальном времени)
+2. DAO-голосование: вопрос → Да/Нет → kind:8012 команда
 3. Статус bridge/relay/mesh
-4. Алерты устройств (kind:31007) — красный экран с предупреждением
+4. Алерты устройств (kind:8011) — красный экран с предупреждением
 
 Драйверы:
   - PC симулятор (pygame, для разработки)
@@ -285,7 +285,7 @@ class DAODashboard:
         """Обновить данные из событий relay-v2."""
         for ev in events:
             kind = ev.get("kind")
-            if kind == 31000:
+            if kind == 8010:
                 tags = dict(t[:2] for t in ev.get("tags", []))
                 did = tags.get("d", "unknown")
                 try:
@@ -298,7 +298,7 @@ class DAODashboard:
                     hum=content.get("hum", 0),
                     batt=content.get("battery", 100),
                 )
-            elif kind == 31007:
+            elif kind == 8011:
                 tags = dict(t[:2] for t in ev.get("tags", []))
                 did = tags.get("d", "unknown")
                 alert_type = tags.get("alert", "unknown")
@@ -349,9 +349,9 @@ def _self_test():
 
     # Обновление из relay
     events = [
-        {"kind": 31000, "tags": [["d", "sensor_04"]],
+        {"kind": 8010, "tags": [["d", "sensor_04"]],
          "content": json.dumps({"temp": 26.0, "hum": 50, "battery": 90})},
-        {"kind": 31007, "tags": [["d", "sensor_01"], ["alert", "temp_high"],
+        {"kind": 8011, "tags": [["d", "sensor_01"], ["alert", "temp_high"],
                                  ["severity", "high"]],
          "content": json.dumps({"message": "Temperature 52C"})},
     ]

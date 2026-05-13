@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""SNIN ESP32 — OTA Update (kind:31003).
+"""SNIN ESP32 — OTA Update (kind:8013).
 
 Обновление прошивки ESP32 по воздуху через relay-v2.
 
 Поток:
-  1. OTA Server публикует kind:31003 с firmware
-  2. ESP32 получает команду start_ota (kind:31002)
+  1. OTA Server публикует kind:8013 с firmware
+  2. ESP32 получает команду start_ota (kind:8012)
   3. ESP32 скачивает firmware по URL из content
   4. ESP32 проверяет CRC32, записывает, перезагружается
 
-kind:31003 format:
+kind:8013 format:
   {
-    "kind": 31003,
+    "kind": 8013,
     "pubkey": "<ota_server_pk>",
     "tags": [
       ["d", "<device_id>"],
@@ -74,7 +74,7 @@ class OTAUpdate:
 class OTAManager:
     """OTA менеджер на стороне bridge/RPi.
 
-    Хранит версии прошивок, публикует kind:31003.
+    Хранит версии прошивок, публикует kind:8013.
     """
 
     def __init__(self, firmware_dir: str = "firmware/releases"):
@@ -110,7 +110,7 @@ class OTAManager:
         self, device_id: str, fw_version: str,
         base_url: str = "",
     ) -> dict | None:
-        """Создать kind:31003 для устройства."""
+        """Создать kind:8013 для устройства."""
         fw_path = self.firmware_dir / f"{device_id}_v{fw_version}.bin"
         meta_path = fw_path.with_suffix(".json")
 
@@ -127,7 +127,7 @@ class OTAManager:
         download_url = f"{base_url}/{fw_path.name}"
 
         event = {
-            "kind": 31003,
+            "kind": 8013,
             "pubkey": "ota_server",
             "tags": [
                 ["d", device_id],
@@ -257,9 +257,9 @@ def _self_test():
     # 2. Create update event
     event = server.create_update_event("sensor_01", "0.5.1", base_url="file://")
     assert event is not None
-    assert event["kind"] == 31003
+    assert event["kind"] == 8013
     assert event["tags"][1][1] == "0.5.1"
-    print(f"  ✅ kind:31003 created: v{event['tags'][1][1]}")
+    print(f"  ✅ kind:8013 created: v{event['tags'][1][1]}")
 
     # 3. OTA client download
     client = OTAClient()

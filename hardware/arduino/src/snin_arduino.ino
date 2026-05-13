@@ -2,7 +2,7 @@
  * SNIN Arduino v0.6 — прошивка для ESP8266 / ESP32 (Arduino framework)
  *
  * Читает датчик, подписывает Ed25519, шлёт по ESP-NOW на bridge.
- * Принимает команды (kind:31002) по ESP-NOW, выполняет на ESP32.
+ * Принимает команды (kind:8012) по ESP-NOW, выполняет на ESP32.
  * Мониторит батарею через ADC, шлёт алерты при низком заряде.
  *
  * Платформы:
@@ -143,7 +143,7 @@ void sendPacket(const String& json) {
     Serial.printf("Sent: %d bytes\n", json.length());
 }
 
-// ─── Command handler (kind:31002) ──────────────────────────────
+// ─── Command handler (kind:8012) ──────────────────────────────
 void onDataRecv(uint8_t* mac, uint8_t* data, uint8_t len) {
     String msg((char*)data, len);
     Serial.printf("Received: %s\n", msg.c_str());

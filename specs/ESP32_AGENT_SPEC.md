@@ -99,9 +99,9 @@ p2p-agent-mesh (AgentMesh.emit)
   ▼
 relay-v2 bridge
   │
-  ├── Nostr kind:31000 (Device Telemetry)
-  │   ├── kind:31001 (Device Registration)
-  │   └── kind:31002 (Device Command)
+  ├── Nostr kind:8010 (Device Telemetry)
+  │   ├── kind:8014 (Device Registration)
+  │   └── kind:8012 (Device Command)
   │
   ▼
 DAO (Voting via NIP-29 groups)

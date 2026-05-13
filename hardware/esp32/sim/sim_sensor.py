@@ -245,7 +245,7 @@ async def self_test():
         packet = await sensor.generate_telemetry()
         # Через handler (как через relay-v2)
         event = {
-            "kind": 31000,
+            "kind": 8010,
             "pubkey": sensor._pubkey_hex,
             "tags": [
                 ["d", packet["device_id"]],

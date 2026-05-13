@@ -28,10 +28,10 @@
 │  Merkle sync (depin/merkle_sync.py)              │
 ├──────────────────────────────────────────────────┤
 │  PROTOCOL LAYER                                   │
-│  relay-v2 (Nostr kinds 31000-31002)              │
-│  Device Registry (kind:31001)                    │
-│  Device Telemetry (kind:31000)                   │
-│  Device Command (kind:31002)                     │
+│  relay-v2 (Nostr kinds 8010-8012)              │
+│  Device Registry (kind:8014)                    │
+│  Device Telemetry (kind:8010)                   │
+│  Device Command (kind:8012)                     │
 ├──────────────────────────────────────────────────┤
 │  HARDWARE ADAPTERS                                │
 │  ESP32 (MicroPython)          ✅                   │
@@ -61,14 +61,14 @@
 
 | Kind | Описание | Статус |
 |------|----------|--------|
-| 31000 | Device Telemetry | ✅ готов |
-| 31001 | Device Registration | ✅ готов |
-| 31002 | Device Command (DAO→ESP32) | ⚠️ bridge не слушает |
-| 31003 | Device OTA Update | ❌ нет |
+| 8010 | Device Telemetry | ✅ готов |
+| 8014 | Device Registration | ✅ готов |
+| 8012 | Device Command (DAO→ESP32) | ⚠️ bridge не слушает |
+| 8013 | Device OTA Update | ❌ нет |
 | 31004 | Device Logs | ❌ нет |
 | 31005 | Device Config | ❌ нет |
-| 31006 | Device Location (GPS) | ❌ нет |
-| 31007 | Device Alert | ❌ нет |
+| 8015 | Device Location (GPS) | ❌ нет |
+| 8011 | Device Alert | ❌ нет |
 | 31008 | Device Pairing Request | ❌ нет |
 | 31009 | Device Heartbeat | ❌ нет |
 
@@ -189,7 +189,7 @@
        + JPEG capture (QVGA — 320x240)
        + Edge AI (TensorFlow Lite Micro — цифры/текст)
        + Отправка изображения на bridge → relay-v2
-       Kind: 31000 + base64 thumbnail (≤10KB)
+       Kind: 8010 + base64 thumbnail (≤10KB)
 ```
 
 ### 3.10 LoRa ESP32 (SX1278 / SX1262)
@@ -239,7 +239,7 @@ P2 — OTA Update + mDNS Discovery
          без mDNS пользователь не найдёт bridge в сети
   Код:   ~300 строк
 
-P3 — Device Command Loop (kind:31002)
+P3 — Device Command Loop (kind:8012)
   Зачем: замкнуть цикл: DAO проголосовал → ESP32 получил команду
   Код:   ~200 строк (bridge подписывается на mesh topic)
 
@@ -266,7 +266,7 @@ P5 — CAM + Edge AI
                            │ kind:39002-39003
                     ┌──────▼──────────────┐
                     │    RELAY-V2 LAYER    │
-                    │  Nostr kinds 31000-  │
+                    │  Nostr kinds 8010-  │
                     │  31009 + 39000-      │
                     │  39099               │
                     └──────┬──────────────┘

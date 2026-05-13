@@ -2,7 +2,7 @@
 
 **IoT hardware stack: ESP32, Arduino, Raspberry Pi, M5Stack.**
 
-Ed25519-signed telemetry over ESP-NOW, LoRa, BLE — published to Nostr kinds 31000-31002. P2P mesh relay for decentralized sensor networks with DAO governance.
+Ed25519-signed telemetry over ESP-NOW, LoRa, BLE — published to Nostr kinds 8010-8012. P2P mesh relay for decentralized sensor networks with DAO governance.
 
 [![Python](https://img.shields.io/badge/python-3.10+-blue)](https://python.org)
 [![MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -22,7 +22,7 @@ Ed25519-signed telemetry over ESP-NOW, LoRa, BLE — published to Nostr kinds 31
 | IoT clouds lock you in (AWS IoT, Azure) | Open Nostr protocol, no vendor |
 | ESP-NOW limited to 200m | LoRa (15km) via same protocol |
 | No end-to-end authentication | Ed25519 from MCU to relay |
-| No DAO for physical devices | DAO votes → kind:31002 → ESP32 |
+| No DAO for physical devices | DAO votes → kind:8012 → ESP32 |
 | One-off firmwares, no ecosystem | Single protocol for 10+ platforms |
 
 **This is the first stack where an AI agent lives on a microcontroller and votes in a DAO through Nostr.**
@@ -33,7 +33,7 @@ Ed25519-signed telemetry over ESP-NOW, LoRa, BLE — published to Nostr kinds 31
 
 ```
 ESP32 (DHT22) ─── ESP-NOW ─── Bridge ─── AgentMesh ─── relay-v2 (Nostr)
-  │                               │           │          kind:31000-31002
+  │                               │           │          kind:8010-8012
   │ LoRa (15km)                   │           │
   │ BLE (10m, T-Watch)            │           │
   │ mDNS (auto-discovery)         │           │
@@ -67,7 +67,7 @@ hardware/
 ├── esp32/
 │   ├── sdk/transport.py     — Unified transport API (TCP/HTTP/IPFS/ESP-NOW)
 │   ├── bridge/bridge.py     — ESP-NOW → AgentMesh + Ed25519 + WAL
-│   ├── relay/device_handler.py — Nostr kinds 31000-31002 plugin
+│   ├── relay/device_handler.py — Nostr kinds 8010-8012 plugin
 │   ├── firmware/
 │   │   ├── snin_sensor.py    — ESP32 DHT22 + Ed25519 + ESP-NOW
 │   │   └── snin_bridge_fw.py — ESP32 bridge (ESP-NOW → UART)
@@ -106,19 +106,19 @@ examples/                   — 5 copy-paste examples
 1. DHT22 reads temperature on ESP32
 2. ESP32 signs with Ed25519, sends ESP-NOW (250B) / LoRa (64B×4)
 3. Bridge verifies signature, forwards to AgentMesh
-4. AgentMesh publishes to relay-v2 (kind:31000)
+4. AgentMesh publishes to relay-v2 (kind:8010)
 5. DAO Pilot observes event, may vote
-6. DAO → kind:31002 → bridge → ESP-NOW → ESP32
+6. DAO → kind:8012 → bridge → ESP-NOW → ESP32
 ```
 
 ## Nostr Kinds
 
 | Kind | Name | Purpose | Status |
 |------|------|---------|--------|
-| 31000 | Device Telemetry | Temperature, humidity, battery | ✅ |
-| 31001 | Device Registration | New ESP32 onboarding | ✅ |
-| 31002 | Device Command | DAO-to-device action | ⏳ |
-| 31003 | Device OTA | Firmware update payload | ⏳ |
+| 8010 | Device Telemetry | Temperature, humidity, battery | ✅ |
+| 8014 | Device Registration | New ESP32 onboarding | ✅ |
+| 8012 | Device Command | DAO-to-device action | ⏳ |
+| 8013 | Device OTA | Firmware update payload | ⏳ |
 
 ## Development Status
 

@@ -14,7 +14,7 @@ CRYPTO           Ed25519 (ucrypto / cryptography)
 BRIDGE           ESP-NOW → UART → bridge.py → AgentMesh
                  WAL, anti-replay, Ed25519 verify
 ────────────────────────────────────────────────────────
-RELAY-V2         Nostr kinds 31000-31002
+RELAY-V2         Nostr kinds 8010-8012
                  Device Telemetry | Registration | Command
 ────────────────────────────────────────────────────────
 HARDWARE         ESP32 | Arduino | RPi | M5Stack | TTGO
@@ -26,9 +26,9 @@ HARDWARE         ESP32 | Arduino | RPi | M5Stack | TTGO
 1. DHT22 читает температуру на ESP32
 2. ESP32 подписывает Ed25519, шлёт ESP-NOW (250 байт)
 3. Bridge принимает, верифицирует, шлёт в AgentMesh
-4. AgentMesh публикует в relay-v2 (kind:31000)
+4. AgentMesh публикует в relay-v2 (kind:8010)
 5. DAO Pilot видит событие, может голосовать
-6. DAO → kind:31002 → bridge → ESP-NOW → ESP32
+6. DAO → kind:8012 → bridge → ESP-NOW → ESP32
 ```
 
 ## Транспорты
@@ -51,6 +51,6 @@ HARDWARE         ESP32 | Arduino | RPi | M5Stack | TTGO
 
 | Kind | Название | Назначение |
 |------|----------|-----------|
-| 31000 | Device Telemetry | Температура, влажность, батарея |
-| 31001 | Device Registration | Регистрация нового ESP32 |
-| 31002 | Device Command | Команда от DAO к ESP32 |
+| 8010 | Device Telemetry | Температура, влажность, батарея |
+| 8014 | Device Registration | Регистрация нового ESP32 |
+| 8012 | Device Command | Команда от DAO к ESP32 |

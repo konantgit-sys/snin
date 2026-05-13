@@ -4,9 +4,9 @@
 Onboarding нового ESP32 в рой.
 
 Процесс:
-  1. ESP32 загружается впервые, шлёт kind:31001 (Register)
+  1. ESP32 загружается впервые, шлёт kind:8014 (Register)
   2. Commission Handler выдаёт идентификатор, слот в mesh
-  3. ESP32 сохраняет конфиг, начинает слать kind:31000
+  3. ESP32 сохраняет конфиг, начинает слать kind:8010
   4. Агенты роя получают уведомление о новом устройстве
 
 Commission mode:
@@ -94,7 +94,7 @@ class CommissionHandler:
         return f"{secrets.randbelow(1000000):06d}"
 
     def handle_start(self, event: dict) -> dict:
-        """Начало commission: ESP32 прислал kind:31001."""
+        """Начало commission: ESP32 прислал kind:8014."""
         pubkey = event.get("pubkey", "")
         if not pubkey:
             return {"ok": False, "error": "no pubkey"}
@@ -242,7 +242,7 @@ def _self_test():
     ch = CommissionHandler(mode=CommissionMode.AUTO)
 
     event = {
-        "kind": 31001,
+        "kind": 8014,
         "pubkey": "a1b2c3d4e5f6" * 4,
         "tags": [["d", "test_sensor"], ["t", "temperature"], ["fw", "v0.5.0"]],
         "content": json.dumps({"capabilities": ["temperature", "humidity"]}),
@@ -274,7 +274,7 @@ def _self_test():
     ch2 = CommissionHandler(mode=CommissionMode.PAIRED, require_pairing=True)
 
     event2 = {
-        "kind": 31001,
+        "kind": 8014,
         "pubkey": "deadbeef" * 4,
         "tags": [["d", "test_sensor_2"], ["t", "temperature"]],
         "content": "{}",
