@@ -121,6 +121,155 @@ class NostrSigner:
 
         return self.sign_event(event)
 
+    def create_kind_8011(
+        self,
+        device_id: str,
+        alert_type: str,
+        severity: str,
+        message: str,
+        seq: int,
+    ) -> dict:
+        """Создать и подписать kind:8011 (Device Alert)."""
+        event = {
+            "pubkey": self.pubkey,
+            "created_at": int(time.time()),
+            "kind": 8011,
+            "tags": [
+                ["d", device_id],
+                ["alert", alert_type],
+                ["severity", severity],
+                ["seq", str(seq)],
+            ],
+            "content": json.dumps({"message": message}, separators=(',', ':')),
+        }
+        return self.sign_event(event)
+
+    def create_kind_8013(
+        self,
+        device_id: str,
+        version: str,
+        size: int,
+        sha256: str,
+        seq: int,
+    ) -> dict:
+        """Создать и подписать kind:8013 (OTA Update)."""
+        event = {
+            "pubkey": self.pubkey,
+            "created_at": int(time.time()),
+            "kind": 8013,
+            "tags": [
+                ["d", device_id],
+                ["ver", version],
+                ["size", str(size)],
+                ["sha256", sha256],
+                ["seq", str(seq)],
+            ],
+            "content": json.dumps({"version": version, "size": size}, separators=(',', ':')),
+        }
+        return self.sign_event(event)
+
+    def create_kind_8014(
+        self,
+        device_id: str,
+        model: str,
+        capabilities: list[str],
+        seq: int,
+    ) -> dict:
+        """Создать и подписать kind:8014 (Device Registration)."""
+        event = {
+            "pubkey": self.pubkey,
+            "created_at": int(time.time()),
+            "kind": 8014,
+            "tags": [
+                ["d", device_id],
+                ["model", model],
+                ["caps", ",".join(capabilities)],
+                ["seq", str(seq)],
+            ],
+            "content": json.dumps({"model": model, "caps": capabilities}, separators=(',', ':')),
+        }
+        return self.sign_event(event)
+
+    def create_kind_8015(
+        self,
+        device_id: str,
+        lat: float,
+        lon: float,
+        alt: float,
+        speed: float,
+        satellites: int,
+        seq: int,
+    ) -> dict:
+        """Создать и подписать kind:8015 (Device Location / GPS)."""
+        event = {
+            "pubkey": self.pubkey,
+            "created_at": int(time.time()),
+            "kind": 8015,
+            "tags": [
+                ["d", device_id],
+                ["lat", str(lat)],
+                ["lon", str(lon)],
+                ["alt", str(alt)],
+                ["speed", str(speed)],
+                ["satellites", str(satellites)],
+                ["seq", str(seq)],
+            ],
+            "content": json.dumps({"hdop": 1.2, "fix_quality": 3}, separators=(',', ':')),
+        }
+        return self.sign_event(event)
+
+    def create_kind_8016(
+        self,
+        device_id: str,
+        mode: str,
+        pubkey_hex: str,
+        seq: int,
+    ) -> dict:
+        """Создать и подписать kind:8016 (Commission)."""
+        event = {
+            "pubkey": self.pubkey,
+            "created_at": int(time.time()),
+            "kind": 8016,
+            "tags": [
+                ["d", device_id],
+                ["mode", mode],
+                ["pubkey", pubkey_hex],
+                ["seq", str(seq)],
+            ],
+            "content": json.dumps({"mode": mode}, separators=(',', ':')),
+        }
+        return self.sign_event(event)
+
+    def create_kind_8017(
+        self,
+        device_id: str,
+        uptime: int,
+        firmware: str,
+        heap_free: int,
+        wifi_rssi: int,
+        battery: int,
+        seq: int,
+    ) -> dict:
+        """Создать и подписать kind:8017 (System Status)."""
+        event = {
+            "pubkey": self.pubkey,
+            "created_at": int(time.time()),
+            "kind": 8017,
+            "tags": [
+                ["d", device_id],
+                ["uptime", str(uptime)],
+                ["firmware", firmware],
+                ["batt", str(battery)],
+                ["seq", str(seq)],
+            ],
+            "content": json.dumps({
+                "uptime": uptime, "firmware": firmware,
+                "heap_free": heap_free, "wifi_rssi": wifi_rssi,
+                "battery": battery
+            }, separators=(',', ':')),
+        }
+        return self.sign_event(event)
+
     def verify_event(self, event: dict) -> bool:
         """Проверить Schnorr подпись события."""
         if "id" not in event or "sig" not in event or "pubkey" not in event:
