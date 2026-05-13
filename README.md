@@ -2,7 +2,20 @@
 
 **AI Agents + IoT Hardware + DAO Governance on Nostr**
 
-SNIN — это открытая инфраструктура для роя AI-агентов на физических устройствах. ESP32, Arduino, Raspberry Pi объединены в P2P mesh через Nostr-реле с DAO-управлением.
+![Python](https://img.shields.io/badge/python-3.10+-blue)
+![MIT](https://img.shields.io/badge/license-MIT-green)
+![ESP32](https://img.shields.io/badge/platform-ESP32-orange)
+![RPi](https://img.shields.io/badge/platform-RaspberryPi-red)
+![Arduino](https://img.shields.io/badge/platform-Arduino-00979D)
+![Nostr](https://img.shields.io/badge/protocol-Nostr-8B5CFE)
+![dePIN](https://img.shields.io/badge/sector-dePIN-22C55E)
+![tests](https://img.shields.io/badge/tests-7%2F7%20passing-brightgreen)
+
+SNIN — открытая инфраструктура для роя физических устройств (ESP32, Arduino, Raspberry Pi),
+объединённых в P2P mesh через Nostr-реле с DAO-управлением.
+
+**Уникальность:** первый стек, где AI-агент живёт на микроконтроллере
+и голосует в DAO через Nostr. Никто так не делает.
 
 ---
 
@@ -10,87 +23,105 @@ SNIN — это открытая инфраструктура для роя AI-�
 
 ```
 ESP32 (DHT22) ─── ESP-NOW ─── Bridge ─── AgentMesh ─── relay-v2 (Nostr)
-                   250B pkt        │           │            kind:31000-31002
-                                   │           │
-                              Raspberry Pi    DAO Pilot
-                              (Hub/Display)   (3 агента)
+  │                               │           │          kind:31000-31002
+  │ LoRa (15km)                   │           │
+  │ BLE (10m, T-Watch)            │           │
+  │ mDNS (auto-discovery)         │           │
+  │                               │           │
+  Raspberry Pi (Hub/Display) ─────┤           │
+  Arduino (ESP8266, C++) ───── ESP-NOW ───────┤
+  M5Stack/TTGO (DAO Terminal) ────┤           │
+                                          DAO Pilot
+                                        (3 агента)
 ```
 
-**Уникальность:** первый стек, где AI-агент живёт на микроконтроллере и голосует в DAO через Nostr.
+## Быстрый старт
 
----
+```bash
+git clone https://github.com/konantgit-sys/snin.git
+cd snin/hardware/esp32
+pip install cryptography aiohttp
+python3 test_smoke.py              # 7 тестов, все PASSED
+python3 lora/lora_phy.py           # LoRa self-test
+python3 ble/ble_phy.py             # BLE self-test
+```
 
 ## Что внутри
 
 ```
 hardware/
-├── SPECIFICATION.md        — 10 платформ, матрица, протокол
-├── STACK_OPTIMIZATION.md   — GAP-анализ: LoRa, BLE, OTA
+├── SPECIFICATION.md         — 10 платформ, матрица, протокол
+├── STACK_OPTIMIZATION.md    — GAP-анализ: LoRa, BLE, OTA, mDNS
+│
 ├── esp32/
-│   ├── sdk/transport.py    — абстрактный транспорт (TCP/HTTP/IPFS/ESP-NOW)
-│   ├── bridge/bridge.py    — bridge ESP-NOW → AgentMesh + Ed25519 + WAL
-│   ├── relay/device_handler.py — плагин relay-v2 (kind:31000-31002)
+│   ├── sdk/transport.py     — TCP/HTTP/IPFS/ESP-NOW transport
+│   ├── bridge/bridge.py     — ESP-NOW → AgentMesh + Ed25519 + WAL
+│   ├── relay/device_handler.py — Nostr kinds 31000-31002 plugin
 │   ├── firmware/
-│   │   ├── snin_sensor.py     — прошивка ESP32 (DHT22 + подпись + ESP-NOW)
-│   │   └── snin_bridge_fw.py  — прошивка ESP32-bridge (ESP-NOW → UART)
-│   └── sim/sim_sensor.py   — симулятор ESP32 + self-test
+│   │   ├── snin_sensor.py    — ESP32 DHT22 + Ed25519 + ESP-NOW
+│   │   └── snin_bridge_fw.py — ESP32 bridge (ESP-NOW → UART)
+│   ├── lora/lora_phy.py     — SX1278/SX1262, 2-15km, фрагментация
+│   ├── ble/ble_phy.py       — GATT сервер, телефон ↔ ESP32
+│   ├── mdns/mdns_discovery.py — автоматический поиск bridge
+│   └── sim/sim_sensor.py    — симулятор ESP32 (self-test)
+│
 ├── raspberry/
-│   └── raspberry_node.py   — RPi: bridge + agent + HDMI dashboard
+│   └── raspberry_node.py    — RPi: bridge + agent + HDMI dashboard
 ├── arduino/
-│   └── src/snin_arduino.ino — C++ прошивка (ESP8266/ESP32 + Ed25519)
+│   └── src/snin_arduino.ino — C++ прошивка ESP8266/ESP32
 └── display/
-    └── display_module.py   — M5Stack/TTGO/LilyGO + DAO голосование на экране
+    └── display_module.py    — M5Stack/TTGO/LilyGO DAO terminal
 
-specs/ESP32_AGENT_SPEC.md  — полная спецификация протокола
-research/                  — обзор open-source альтернатив, крипто-стек
-docs/PHASE_PLAN.md         — 5 фаз развития
-docs/ESP32_ROADMAP.md      — дорожная карта ESP32
+specs/ESP32_AGENT_SPEC.md    — полная спека протокола
+research/                    — open-source review, crypto stack
 ```
 
----
+## Платформы
 
-## Быстрый старт
+| Платформа | Язык | Транспорт | Роль в рое |
+|-----------|------|-----------|-----------|
+| ESP32-S3 | MicroPython | ESP-NOW / LoRa / BLE / TCP | Sensor node |
+| ESP8266 | C++ (Arduino) | ESP-NOW | Ultra-cheap sensor |
+| Raspberry Pi 4/5 | Python | TCP / Ethernet | Hub, relay, display |
+| Raspberry Pi Zero 2W | Python | TCP + USB-ESP32 | Portable bridge |
+| M5Stack Core2 | MicroPython | ESP-NOW + TFT | DAO terminal |
+| TTGO T-Display | MicroPython | ESP-NOW + ST7789 | Wearable display |
+| LilyGO T-Watch | MicroPython | BLE + GPS | Wrist DAO terminal |
 
-```bash
-# Симуляция без железа (self-test всей цепочки)
-cd hardware/esp32
-pip install cryptography aiohttp
-python3 test_smoke.py           # 4 теста
-python3 sim/sim_sensor.py --self-test  # bridge + relay-v2
-```
-
----
-
-## Зависимости
-
-| Компонент | Платформа | Язык |
-|-----------|-----------|------|
-| Transport SDK | Любая | Python 3.10+ |
-| Bridge | Сервер/RPi | Python 3.10+ |
-| Sensor Firmware | ESP32 | MicroPython |
-| Bridge Firmware | ESP32 | MicroPython |
-| Arduino Sensor | ESP8266/ESP32 | C++ (Arduino) |
-| Display | M5Stack/TTGO | MicroPython |
-
----
-
-## Статус
+## Протокол (один для всех платформ)
 
 ```
-Фаза 0-2: ✅ Transport + Bridge + Multi-Platform (17 файлов, ~3000 строк)
-Фаза 3:   ⏳ LoRa + BLE + OTA + mDNS
-Фаза 4:   ⏳ Cognitive Swarm (Task Scheduler, GPS, Edge AI)
-Фаза 5:   ⏳ Production (1000 devices, InfluxDB, Grafana)
+1. DHT22 читает температуру на ESP32
+2. ESP32 подписывает Ed25519, шлёт ESP-NOW (250 байт) / LoRa (64 байта)
+3. Bridge принимает, верифицирует, шлёт в AgentMesh
+4. AgentMesh публикует в relay-v2 (kind:31000)
+5. DAO Pilot видит событие, может голосовать
+6. DAO → kind:31002 → bridge → ESP-NOW → ESP32
 ```
 
----
+## Nostr Kinds
 
-## Репозитории
+| Kind | Название | Назначение | Статус |
+|------|----------|-----------|--------|
+| 31000 | Device Telemetry | Температура, влажность, батарея | ✅ |
+| 31001 | Device Registration | Регистрация нового ESP32 | ✅ |
+| 31002 | Device Command | Команда от DAO к ESP32 | ⏳ |
+| 31003 | OTA Update | Обновление прошивки | ⏳ |
 
-- [p2p-agent-mesh](https://github.com/konantgit-sys/p2p-agent-mesh) — P2P pub/sub transport для AI-агентов
-- [snin](https://github.com/konantgit-sys/snin) — Hardware адаптеры, прошивки, документация (этот репозиторий)
+## Статус разработки
 
----
+```
+Фаза 0-2: ✅ Transport + Bridge + Multi-Platform (27 файлов, ~200 KB)
+Фаза 3:   ✅ LoRa + BLE + mDNS (закрыты транспортные дыры)
+Фаза 4:   ⏳ Cognitive Swarm (команды, GPS, Edge AI, камера)
+Фаза 5:   ⏳ Production (1000 устройств, CI/CD, PyPI)
+```
+
+## Связанные репозитории
+
+| Репозиторий | Описание |
+|-------------|----------|
+| [p2p-agent-mesh](https://github.com/konantgit-sys/p2p-agent-mesh) | P2P pub/sub transport для AI-агентов (v0.5.0, 133 теста) |
 
 ## Лицензия
 
