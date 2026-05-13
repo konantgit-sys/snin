@@ -1,58 +1,56 @@
 # SNIN Architecture
 
-## High-Level Design
+## Слои
 
 ```
-┌─────────────────────────────────┐
-│        AGENT LAYER              │
-│  AI agents, bots, humans        │
-│  Nostr keys for identity        │
-│  Solana wallets for payments    │
-└──────────┬──────────────────────┘
-           │ signed events
-           ▼
-┌─────────────────────────────────┐
-│        TRANSPORT LAYER          │
-│  Nostr relay protocol           │
-│  Event publishing & retrieval   │
-│  Filtering by kind and tag      │
-└──────────┬──────────────────────┘
-           │ verified receipts
-           ▼
-┌─────────────────────────────────┐
-│        SETTLEMENT LAYER         │
-│  Solana blockchain              │
-│  Token-2022 program             │
-│  On-chain transaction finality  │
-└─────────────────────────────────┘
+APPLICATION      Sensor read / DAO vote / Display render
+────────────────────────────────────────────────────────
+AGENT LAYER      AgentMesh (emit/listen/capabilities)
+────────────────────────────────────────────────────────
+TRANSPORT        TCP | HTTP | IPFS | ESP-NOW
+────────────────────────────────────────────────────────
+CRYPTO           Ed25519 (ucrypto / cryptography)
+────────────────────────────────────────────────────────
+BRIDGE           ESP-NOW → UART → bridge.py → AgentMesh
+                 WAL, anti-replay, Ed25519 verify
+────────────────────────────────────────────────────────
+RELAY-V2         Nostr kinds 31000-31002
+                 Device Telemetry | Registration | Command
+────────────────────────────────────────────────────────
+HARDWARE         ESP32 | Arduino | RPi | M5Stack | TTGO
 ```
 
-## Principles
+## Поток данных (один для всех платформ)
 
-1. **Identity-first** — every agent has a Nostr keypair. The public key
-   is the agent's identity across the entire network.
+```
+1. DHT22 читает температуру на ESP32
+2. ESP32 подписывает Ed25519, шлёт ESP-NOW (250 байт)
+3. Bridge принимает, верифицирует, шлёт в AgentMesh
+4. AgentMesh публикует в relay-v2 (kind:31000)
+5. DAO Pilot видит событие, может голосовать
+6. DAO → kind:31002 → bridge → ESP-NOW → ESP32
+```
 
-2. **Settlement-agnostic** — while the initial implementation uses Solana,
-   the event structure supports any blockchain. The `solana` tag can be
-   extended to other chains.
+## Транспорты
 
-3. **Service discovery** — agents announce capabilities (kind:30002),
-   other agents discover and request services (kind:30000), payment
-   is confirmed (kind:30001).
+| Тип | Дальность | Пропускная | Пакет | Платформы |
+|-----|-----------|-----------|-------|-----------|
+| ESP-NOW | ~200m | 250 байт | ESP-NOW фрейм | ESP32, ESP8266 |
+| TCP | ∞ | ∞ | поток | RPi, сервер |
+| HTTP | ∞ | ∞ | JSON | RPi, сервер |
+| IPFS | ∞ | ∞ | GossipSub | RPi, сервер |
 
-4. **No central coordinator** — agents interact directly. Relay is
-   a message bus, not a control plane.
+## Криптография
 
-## Motivation
+- Подпись: Ed25519 (32 байта ключ, 64 байта подпись)
+- Совместимость: ucrypto (ESP32) ↔ cryptography (Python)
+- Anti-replay: sequence number + window
+- Хранилище ключей: config.py на ESP32
 
-Existing Nostr zaps (NIP-57) require Lightning infrastructure.
-Existing Solana tools don't integrate with Nostr identity.
-SNIN bridges the two: Nostr for who you are, Solana for what you pay.
+## Релеи (Nostr)
 
-## Future Direction
-
-- Multi-agent coordination (DAOs)
-- Reputation systems based on payment history
-- Cross-chain settlement
-
-*2026-05-13*
+| Kind | Название | Назначение |
+|------|----------|-----------|
+| 31000 | Device Telemetry | Температура, влажность, батарея |
+| 31001 | Device Registration | Регистрация нового ESP32 |
+| 31002 | Device Command | Команда от DAO к ESP32 |

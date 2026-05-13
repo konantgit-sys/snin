@@ -1,6 +1,25 @@
-# No code — this is a specification repo only.
-# No secrets — all sensitive data stays private.
-.DS_Store
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
 *.swp
-*.swo
-*~
+
+# ESP32 firmware config (private keys!)
+hardware/esp32/firmware/config.py
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment
+.env
