@@ -19,10 +19,14 @@ import sys
 import time
 from pathlib import Path
 
-# Путь к p2p-agent-mesh
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "p2p-agent-mesh"))
+# Путь к p2p-agent-mesh и snin-public
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "p2p-agent-mesh"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from esp32.sdk.transport import TransportMessage, create_transport
+try:
+    from esp32.sdk.transport import TransportMessage, create_transport
+except ImportError:
+    from hardware.esp32.sdk.transport import TransportMessage, create_transport
 
 logging.basicConfig(
     level=logging.INFO,

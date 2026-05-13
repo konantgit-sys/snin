@@ -56,6 +56,9 @@ class PacketFragmenter:
 
     @staticmethod
     def fragment(packet: bytes) -> list[bytes]:
+        if len(packet) == 0:
+            return []
+
         total = (len(packet) + PacketFragmenter.MAX_FRAGMENT_PAYLOAD - 1) // \
                 PacketFragmenter.MAX_FRAGMENT_PAYLOAD
         if total > 255:
@@ -78,7 +81,7 @@ class PacketFragmenter:
     @staticmethod
     def defragment(fragments: list[bytes]) -> bytes | None:
         if not fragments:
-            return None
+            return b''  # пустой пакет — валидный случай
         fragments.sort(key=lambda f: f[2])  # по index
         total = fragments[0][1]
 

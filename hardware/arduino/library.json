@@ -1,0 +1,37 @@
+{
+  "name": "SNIN-Arduino",
+  "version": "0.5.0",
+  "description": "SNIN IoT mesh node for ESP8266/ESP32. Ed25519 signed telemetry over ESP-NOW to Nostr relay.",
+  "keywords": [
+    "iot",
+    "mesh",
+    "esp32",
+    "esp8266",
+    "esp-now",
+    "ed25519",
+    "nostr",
+    "sensor",
+    "telemetry",
+    "depin"
+  ],
+  "authors": [
+    {
+      "name": "SNIN Network",
+      "email": "snin@duck.com",
+      "url": "https://snin.v2.site"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/konantgit-sys/snin.git"
+  },
+  "homepage": "https://snin.v2.site",
+  "license": "MIT",
+  "platforms": ["espressif8266", "espressif32"],
+  "frameworks": ["arduino"],
+  "headers": ["snin_arduino.ino"],
+  "export": {
+    "include": ["hardware/arduino/src"],
+    "exclude": ["__pycache__", "*.py"]
+  }
+}

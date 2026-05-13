@@ -12,6 +12,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "hardware"))
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("snin.test")
@@ -19,7 +20,10 @@ logger = logging.getLogger("snin.test")
 
 async def test_transport_pubsub():
     """Тест: 2 агента через TCP transport."""
-    from esp32.sdk.transport import TCPTransport, TransportMessage
+    try:
+        from esp32.sdk.transport import TCPTransport, TransportMessage
+    except ImportError:
+        from hardware.esp32.sdk.transport import TCPTransport, TransportMessage
 
     received = []
 
@@ -64,7 +68,10 @@ async def test_transport_pubsub():
 
 async def test_transport_factory():
     """Тест фабрики транспортов."""
-    from esp32.sdk.transport import create_transport, TCPTransport, HTTPTransport
+    try:
+        from esp32.sdk.transport import create_transport, TCPTransport, HTTPTransport
+    except ImportError:
+        from hardware.esp32.sdk.transport import create_transport, TCPTransport, HTTPTransport
 
     tcp = create_transport("tcp")
     http = create_transport("http")
@@ -76,7 +83,10 @@ async def test_transport_factory():
 async def test_bridge_verify():
     """Тест верификации подписи: симуляция ESP32 → bridge."""
     from cryptography.hazmat.primitives.asymmetric import ed25519
-    from esp32.bridge.bridge import verify_esp32_signature
+    try:
+        from esp32.bridge.bridge import verify_esp32_signature
+    except ImportError:
+        from hardware.esp32.bridge.bridge import verify_esp32_signature
 
     # Генерируем ключ (как на ESP32)
     priv_key = ed25519.Ed25519PrivateKey.generate()
@@ -100,7 +110,10 @@ async def test_bridge_verify():
 
 async def test_device_handler():
     """Тест relay-v2 handler для ESP32."""
-    from esp32.relay.device_handler import ESP32DeviceHandler, DeviceRegistry
+    try:
+        from esp32.relay.device_handler import ESP32DeviceHandler, DeviceRegistry
+    except ImportError:
+        from hardware.esp32.relay.device_handler import ESP32DeviceHandler, DeviceRegistry
 
     registry = DeviceRegistry()
     handler = ESP32DeviceHandler(registry)

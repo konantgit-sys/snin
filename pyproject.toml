@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "snin-hardware"
+version = "0.5.0"
+description = "IoT hardware stack for ESP32, Arduino, Raspberry Pi. Ed25519 telemetry over ESP-NOW/LoRa/BLE via Nostr."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+
+authors = [
+    { name = "SNIN Network", email = "snin@duck.com" },
+]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: Proxy Servers",
+    "Topic :: Software Development :: Embedded Systems",
+    "Topic :: System :: Networking",
+    "Topic :: System :: Hardware",
+]
+
+dependencies = [
+    "cryptography>=41",
+    "aiohttp>=3.9",
+]
+
+[project.urls]
+"Homepage" = "https://snin.v2.site"
+"Repository" = "https://github.com/konantgit-sys/snin"
+"Documentation" = "https://github.com/konantgit-sys/snin/blob/main/README.md"
+"Changelog" = "https://github.com/konantgit-sys/snin/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+ble = ["bleak"]
+mdns = ["zeroconf"]
+display = ["pygame"]
+raspberry = ["gpiozero", "RPi.GPIO"]
+all = ["bleak", "zeroconf", "pygame", "gpiozero", "RPi.GPIO"]
+test = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+    "hardware*",
+    "specs*",
+    "research*",
+    "docs*",
+]
+
+[tool.setuptools.package-data]
+"*" = ["*.md", "*.ino", "*.example", ".gitignore"]
+
+[tool.pytest.ini_options]
+testpaths = ["hardware/esp32"]
+python_files = ["test_*.py"]
+
+[tool.flake8]
+max_line_length = 100
+extend_ignore = ["E501", "F401", "E402"]
+exclude = [".git", "__pycache__", "venv"]
