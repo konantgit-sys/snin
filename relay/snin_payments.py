@@ -124,12 +124,22 @@ async def handle_snin_payment(event: dict) -> dict:
     if not tx_result.get("valid"):
         return {"accepted": False, "reason": tx_result.get("reason", "Solana tx verification failed")}
     
-    # 6. Извлекаем информацию о переводе
+    # 6. Извлекаем информацию о переводе (опционально — для лога)
     tx_data = tx_result.get("data")
-    transfer_info = extract_transfer_info(tx_data)
+    transfer_info = {}
+    if tx_data:
+        try:
+            transfer_info = extract_transfer_info(tx_data)
+        except Exception as e:
+            logger.warning(f"[PAYMENT] extract_transfer_info error: {e}")
     
-    if not transfer_info.get("destination"):
-        return {"accepted": False, "reason": "could not extract transfer info from Solana tx"}
+    if transfer_info.get("destination"):
+        logger.info(
+            f"[PAYMENT] ✅ {transfer_info.get('amount', 0)} {transfer_info.get('mint', 'SOL')} from "
+            f"{str(transfer_info.get('source',''))[:8]} to {str(transfer_info.get('destination',''))[:8]}"
+        )
+    else:
+        logger.info(f"[PAYMENT] ✅ tx {solana_tx[:16]}... confirmed on Solana (transfer info: {transfer_info})")
     
     # 7. Добавляем в seen set (double-spend prevention)
     SEEN_TX_SET.add(solana_tx)

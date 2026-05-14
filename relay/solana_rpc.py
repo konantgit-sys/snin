@@ -166,16 +166,55 @@ def extract_transfer_info(tx_data: dict, mint: str = None) -> dict:
     """
     Извлечь информацию о переводе из данных транзакции Solana.
     Возвращает отправителя, получателя, сумму, mint.
+    Поддерживает: SOL transfers (System Program) и SPL Token transfers.
     """
-    # Парсим инструкции транзакции
     tx = tx_data.get("transaction", {})
     message = tx.get("message", {})
     instructions = message.get("instructions", [])
+    account_keys = message.get("accountKeys", [])
     
-    # Находим SPL Transfer инструкцию
+    # Индексы аккаунтов
+    pre_balances = tx_data.get("meta", {}).get("preBalances", [])
+    post_balances = tx_data.get("meta", {}).get("postBalances", [])
+    
+    # 1. Пытаемся найти SOL transfer (System Program — program id 111111...)
+    for i, ix in enumerate(instructions):
+        program_idx = ix.get("programIdIndex")
+        if program_idx is not None and program_idx < len(account_keys):
+            prog_id = account_keys[program_idx] if isinstance(account_keys[program_idx], str) else str(account_keys[program_idx])
+        else:
+            prog_id = ix.get("programId", "")
+        
+        # System Program SOL transfer
+        if "11111111111111111111111111111111" in str(prog_id):
+            accounts = ix.get("accounts", [])
+            if len(accounts) >= 2 and len(pre_balances) > max(max(accounts), 0):
+                sender_idx = accounts[0]
+                receiver_idx = accounts[1]
+                
+                if isinstance(sender_idx, int) and isinstance(receiver_idx, int):
+                    sender = str(account_keys[sender_idx]) if sender_idx < len(account_keys) else None
+                    receiver = str(account_keys[receiver_idx]) if receiver_idx < len(account_keys) else None
+                    
+                    # Сумма = разница баланса отправителя (с учётом fee)
+                    if sender_idx < len(pre_balances) and receiver_idx < len(post_balances):
+                        sender_change = post_balances[sender_idx] - pre_balances[sender_idx]
+                        receiver_change = post_balances[receiver_idx] - pre_balances[receiver_idx]
+                        amount = max(0, receiver_change)
+                        
+                        if amount > 0 and sender and receiver:
+                            return {
+                                "source": sender,
+                                "destination": receiver,
+                                "amount": amount,
+                                "mint": "SOL",
+                                "token_program": "System Program",
+                            }
+    
+    # 2. SPL Token transfer (существующая логика)
     for ix in instructions:
         program = ix.get("programId", "")
-        if program == TOKEN_PROGRAM_ID:  # с сомнением
+        if "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" in str(program):
             parsed = ix.get("parsed", {})
             if parsed.get("type") == "transfer":
                 info = parsed.get("info", {})
@@ -185,32 +224,28 @@ def extract_transfer_info(tx_data: dict, mint: str = None) -> dict:
                     "amount": int(info.get("amount", 0)),
                     "mint": info.get("mint"),
                     "authority": info.get("authority"),
+                    "token_program": "SPL Token",
                 }
     
-    # Fallback: пытаемся найти в meta
-    pre_balances = tx_data.get("meta", {}).get("preTokenBalances", [])
-    post_balances = tx_data.get("meta", {}).get("postTokenBalances", [])
-    
-    if pre_balances and post_balances:
-        # Сравниваем pre и post балансы
-        for pre in pre_balances:
-            for post in post_balances:
-                if pre.get("owner") != post.get("owner") and pre.get("mint") == post.get("mint"):
-                    # Разные владельцы — перевод
-                    diff = int(post.get("uiTokenAmount", {}).get("amount", 0)) - int(pre.get("uiTokenAmount", {}).get("amount", 0))
-                    if diff < 0:
-                        sender = pre.get("owner")
-                        # Ищем получателя
-                        for post2 in post_balances:
-                            for pre2 in pre_balances:
-                                if post2.get("owner") != pre2.get("owner") and post2.get("mint") == post.get("mint"):
-                                    if post2.get("uiTokenAmount", {}).get("amount", "0") != pre2.get("uiTokenAmount", {}).get("amount", "0"):
-                                        return {
-                                            "source": sender,
-                                            "destination": post2.get("owner"),
-                                            "amount": abs(diff),
-                                            "mint": pre.get("mint"),
-                                        }
+    # 3. Fallback через pre/post balances (только SOL)
+    if pre_balances and post_balances and account_keys:
+        for i in range(min(len(pre_balances), len(post_balances))):
+            diff = post_balances[i] - pre_balances[i]
+            if diff > 0:
+                receiver = str(account_keys[i]) if i < len(account_keys) else None
+                # Ищем отправителя (отрицательная разница)
+                for j in range(min(len(pre_balances), len(post_balances))):
+                    if i != j:
+                        diff2 = post_balances[j] - pre_balances[j]
+                        if diff2 < 0 and abs(diff2) > abs(diff):
+                            sender = str(account_keys[j]) if j < len(account_keys) else None
+                            return {
+                                "source": sender,
+                                "destination": receiver,
+                                "amount": diff,
+                                "mint": "SOL",
+                                "token_program": "System Program (balance diff)",
+                            }
     
     return {"source": None, "destination": None, "amount": 0, "mint": None}
 
