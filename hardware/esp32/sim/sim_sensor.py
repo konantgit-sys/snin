@@ -7,7 +7,7 @@
 Usage:
     # Запустить bridge сначала (на одном терминале):
     python3 esp32/bridge/bridge.py --sim-mode --port 9090
-    
+
     # Потом симулятор (на другом):
     python3 esp32/sim/sim_sensor.py --bridge localhost:9090 --device-id sim_sensor_01
 
@@ -21,7 +21,6 @@ import argparse
 import asyncio
 import json
 import logging
-import os
 import sys
 import time
 from pathlib import Path
@@ -221,7 +220,6 @@ async def self_test():
     logger.info("=" * 50)
 
     from esp32.sdk.transport import create_transport
-    from esp32.bridge.bridge import ESP32Bridge
     from esp32.relay.device_handler import ESP32DeviceHandler, DeviceRegistry
 
     # 1. In-memory transport (без сети)
@@ -237,7 +235,7 @@ async def self_test():
 
     # Регистрация
     reg = await sensor.generate_register()
-    msg_bytes = json.dumps(reg).encode()
+    json.dumps(reg).encode()
     logger.info(f"  Registration: {reg['device_id']}")
 
     # 3 пакета телеметрии
