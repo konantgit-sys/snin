@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """SNIN BLE — Bluetooth Low Energy для ESP32 и LilyGO T-Watch.
 
-Зачем: 
+Зачем:
   - T-Watch связь с телефоном
   - Локальный сброс данных с ESP32 на телефон
   - Push-уведомления о DAO-голосованиях
