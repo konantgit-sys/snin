@@ -77,7 +77,7 @@ class DeviceCommand:
             seq = int(tags.get("seq", 0))
 
             if not device_id or not action_raw:
-                logger.warning(f"Missing d or cmd tag in event")
+                logger.warning("Missing d or cmd tag in event")
                 return None
 
             try:
@@ -166,11 +166,11 @@ class ActionRegistry:
         return {"ok": True, "action": "set_config", "key": key, "value": value}
 
     def _action_pause(self, cmd: DeviceCommand) -> dict:
-        logger.info(f"[SIM] Paused")
+        logger.info("[SIM] Paused")
         return {"ok": True, "action": "pause"}
 
     def _action_resume(self, cmd: DeviceCommand) -> dict:
-        logger.info(f"[SIM] Resumed")
+        logger.info("[SIM] Resumed")
         return {"ok": True, "action": "resume"}
 
 
@@ -195,7 +195,7 @@ class CmdHandler:
 
         # Фильтр: если задан device_id — только для него
         if self.device_id and cmd.device_id != self.device_id:
-            return {"ok": False, "error": f"not for this device"}
+            return {"ok": False, "error": "not for this device"}
 
         # Anti-replay: seq строго возрастает
         last = self._last_seq.get(cmd.device_id, -1)
