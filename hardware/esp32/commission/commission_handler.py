@@ -257,7 +257,7 @@ def _self_test():
     # Duplicate
     result2 = ch.handle_start(event)
     assert result2["already_registered"]
-    print(f"  ✅ Duplicate detected")
+    print("  ✅ Duplicate detected")
 
     # List
     devices = ch.list_devices()
