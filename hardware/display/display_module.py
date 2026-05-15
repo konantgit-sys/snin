@@ -214,7 +214,6 @@ class DAODashboard:
         for did, dev in sorted(self.devices.items())[:8]:
             age = dev.age_seconds()
             color = (0, 255, 0) if age < 60 else (255, 255, 0) if age < 300 else (255, 0, 0)
-            batt_color = (0, 255, 0) if dev.battery > 30 else (255, 0, 0)
 
             self.display.small_text(
                 f"{dev.device_id[:14]:14s} "
@@ -349,11 +348,16 @@ def _self_test():
 
     # Обновление из relay
     events = [
-        {"kind": 8010, "tags": [["d", "sensor_04"]],
-         "content": json.dumps({"temp": 26.0, "hum": 50, "battery": 90})},
-        {"kind": 8011, "tags": [["d", "sensor_01"], ["alert", "temp_high"],
-                                 ["severity", "high"]],
-         "content": json.dumps({"message": "Temperature 52C"})},
+        {
+            "kind": 8010,
+            "tags": [["d", "sensor_04"]],
+            "content": json.dumps({"temp": 26.0, "hum": 50, "battery": 90}),
+        },
+        {
+            "kind": 8011,
+            "tags": [["d", "sensor_01"], ["alert", "temp_high"], ["severity", "high"]],
+            "content": json.dumps({"message": "Temperature 52C"}),
+        },
     ]
     dashboard.update_from_relay(events)
     assert "sensor_04" in dashboard.devices
