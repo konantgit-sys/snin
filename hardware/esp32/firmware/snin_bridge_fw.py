@@ -14,7 +14,6 @@ import json
 import time
 import machine
 import network
-import espnow
 
 # ─── Настройки ─────────────────────────────────────────────────
 CONFIG = {
@@ -64,8 +63,8 @@ class ESPNowUARTBridge:
     def start(self):
         self._init_wifi()
         print(f"SNIN Bridge ESP32: {self._config['device_id']}")
-        print(f"ESP-NOW → UART | UART → ESP-NOW")
-        print(f"Listening...")
+        print("ESP-NOW → UART | UART → ESP-NOW")
+        print("Listening...")
 
         while True:
             try:
@@ -90,7 +89,7 @@ class ESPNowUARTBridge:
             wlan.connect(self._config["wifi_ssid"], self._config["wifi_password"])
             while not wlan.isconnected():
                 time.sleep_ms(100)
-        print(f"WiFi OK. ESP-NOW active.")
+        print("WiFi OK. ESP-NOW active.")
 
     def _forward_esp_to_uart(self):
         """Принять ESP-NOW от сенсора → отправить в UART."""
