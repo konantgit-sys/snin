@@ -288,24 +288,24 @@ def _self_test():
     # Wrong code
     result4 = ch2.verify_pairing("deadbeef" * 4, "000000")
     assert not result4["ok"]
-    print(f"  ✅ Wrong code rejected")
+    print("  ✅ Wrong code rejected")
 
     # Correct code
     result5 = ch2.verify_pairing("deadbeef" * 4, code)
     assert result5["ok"]
     assert result5["status"] == "active"
-    print(f"  ✅ Correct code approved")
+    print("  ✅ Correct code approved")
 
     # Approved mode
     ch3 = CommissionHandler(mode=CommissionMode.APPROVED)
     result6 = ch3.handle_start(event)
     assert result6["status"] == "pending"
-    print(f"  ✅ Approved mode: pending")
+    print("  ✅ Approved mode: pending")
 
     result7 = ch3.approve_pending(event["pubkey"])
     assert result7["ok"]
     assert result7["status"] == "active"
-    print(f"  ✅ Manual approve: active")
+    print("  ✅ Manual approve: active")
 
     print("\n✅ ALL COMMISSION TESTS PASSED")
 
