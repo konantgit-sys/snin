@@ -252,8 +252,6 @@ class BLEBridge:
 
 # ─── CLI ────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    import asyncio
-
     print("SNIN BLE Module — Self Test\n")
 
     sim = BLESimulator()
