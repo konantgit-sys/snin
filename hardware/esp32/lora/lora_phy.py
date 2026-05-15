@@ -23,7 +23,7 @@
 
 Usage:
     from hardware.esp32.lora.lora_phy import SX1278Transport
-    
+
     lora = SX1278Transport(spi_id=1, cs=5, freq=868)
     await lora.start()
     await lora.send(bridge_mac, packet_bytes)
@@ -130,7 +130,6 @@ class LoRaSimulator:
         self._received = 0
 
     async def start(self):
-        import asyncio
         self._running = True
         logger.info(f"LoRa simulator started on UDP:{self._recv_port}")
         # В реальности — SPI + SX1278
@@ -161,7 +160,7 @@ class SX1278Transport:
     В реальном коде на ESP32 (MicroPython):
         import machine
         from lora.sx127x import SX127X
-        
+
         spi = machine.SPI(1, baudrate=10000000,
                           sck=machine.Pin(18), mosi=machine.Pin(23), miso=machine.Pin(19))
         lora = SX127X(spi, cs=machine.Pin(5), dio0=machine.Pin(26))
