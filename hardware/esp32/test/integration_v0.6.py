@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Integration Test v0.6 — полный цикл NIP-80 (kind:8010-8017)"""
-import sys, os, json, asyncio, aiohttp, logging
+import sys
+import os
+import json
+import asyncio
+import aiohttp
+import logging
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 from hardware.crypto.nostr_signer import NostrSigner
 
@@ -35,10 +40,10 @@ async def run():
     log.info('═' * 60)
     log.info(' INTEGRATION TEST v0.6 — NIP-80 Full Cycle')
     log.info('═' * 60)
-    
+
     signer = NostrSigner()
     chk('NostrSigner key', len(signer.pubkey) == 64)
-    
+
     async with aiohttp.ClientSession() as session:
         async with session.ws_connect('ws://localhost:8198', timeout=10) as ws:
             # Test 1: 8010 Telemetry
@@ -47,15 +52,15 @@ async def run():
                                ('basement_03',18.2,80.5,91,3),('garage_04',28.7,55.3,34,4)]:
                 ok = await publish(ws, signer.create_kind_8010(n,t,h,b,s))
                 chk(f'pub {n}', ok)
-            
-            # Test 2: 8011 Alert  
+
+            # Test 2: 8011 Alert
             log.info('\n[TEST] 8011 — Alert')
             for dev,at,sv,msg in [('garden_01','battery_low','high','Battery 8%'),
                                    ('rooftop_02','temp_high','critical','>45C'),
                                    ('garage_04','offline','critical','No signal')]:
                 ok = await publish(ws, signer.create_kind_8011(dev,at,sv,msg,1))
                 chk(f'pub {dev}/{at}', ok)
-            
+
             # Test 3: 8012 Command
             log.info('\n[TEST] 8012 — Command')
             for dev,act,par,s in [('garden_01','set_interval',{'seconds':60},1),
@@ -63,35 +68,35 @@ async def run():
                                    ('rooftop_02','pause',{},3)]:
                 ok = await publish(ws, signer.create_kind_8012(dev,act,par,s))
                 chk(f'pub {dev}/{act}', ok)
-            
+
             # Test 4: 8013-8017
             log.info('\n[TEST] 8013 — OTA')
             ok = await publish(ws, signer.create_kind_8013('garden_01','v0.7.0',262144,'a1b2c3d4e5f6',1))
             chk('pub OTA', ok)
-            
+
             log.info('[TEST] 8014 — Registration')
             ok = await publish(ws, signer.create_kind_8014('rooftop_02','esp32s3',['temp','hum','lora'],1))
             chk('pub Reg', ok)
-            
+
             log.info('[TEST] 8015 — GPS')
             for dev,la,lo,al,sp,sat,s in [('tracker_car',56.8378,60.5968,280,65,12,2),
                                            ('tracker_drone',56.8350,60.6000,150,0,10,1)]:
                 ok = await publish(ws, signer.create_kind_8015(dev,la,lo,al,sp,sat,s))
                 chk(f'pub {dev}', ok)
-            
+
             log.info('[TEST] 8016 — Commission')
             ok = await publish(ws, signer.create_kind_8016('new_05','auto','a1b2c3d4e5f6',1))
             chk('pub Commission', ok)
-            
+
             log.info('[TEST] 8017 — System Status')
             ok = await publish(ws, signer.create_kind_8017('garden_01',86400,'v0.6.0',182400,-65,85,1))
             chk('pub Status', ok)
-            
+
             # Test 5: Subscribe back
             log.info('\n[TEST] Subscribe + Verify')
             evs = await subscribe(ws, 'vfy', {"kinds": list(range(8010,8018)), "limit": 30})
             chk(f'Read {len(evs)} events', len(evs) > 0)
-            
+
             schema_ok = 0; sig_ok = 0
             for ev in evs:
                 if isinstance(json.loads(ev.get('content','{}')), dict) and \
@@ -99,7 +104,7 @@ async def run():
                    any(t[0]=='d' for t in ev.get('tags',[]) if len(t)>=2):
                     schema_ok += 1
                 if signer.verify_event(ev): sig_ok += 1
-            
+
             chk('Schema valid', schema_ok == len(evs), f'{schema_ok}/{len(evs)}')
             # NOTE: verify_event использует nostr library PublicKey.verify() — несовместима
             # с PrivateKey.sign_event() той же библиотеки. Релей принимает подписи корректно.
@@ -109,7 +114,7 @@ async def run():
                 log.info('  ℹ️  Релей подтвердил все 53 события')
             else:
                 chk('Signatures valid', sig_ok == len(evs), f'{sig_ok}/{len(evs)}')
-            
+
             # FINAL
             log.info('\n' + '═' * 60)
             t = PASS + FAIL
