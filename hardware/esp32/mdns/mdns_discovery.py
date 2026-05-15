@@ -34,8 +34,6 @@ import asyncio
 import json
 import logging
 import socket
-import time
-from typing import Callable
 
 logger = logging.getLogger("snin.mdns")
 
