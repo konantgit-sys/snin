@@ -24,8 +24,6 @@ import json
 import time
 import machine
 import network
-import espnow
-import ustruct
 
 # ─── Настройки по умолчанию ─────────────────────────────────────
 CONFIG = {
@@ -295,7 +293,7 @@ class SNINSensorNode:
         print(f"SNIN sensor v0.6: {self._config['device_id']}")
         print(f"Pubkey: {self._signer.pubkey_hex}")
         print(f"Power: {self._config.get('power_mode', 'usb')}")
-        print(f"ESP-NOW duplex: ON")
+        print("ESP-NOW duplex: ON")
 
         while self._running:
             try:
@@ -404,7 +402,7 @@ if __name__ == "__main__":
         import config
         CONFIG.update({k: v for k, v in config.__dict__.items()
                       if not k.startswith("_")})
-        print(f"Config loaded from config.py")
+        print("Config loaded from config.py")
     except ImportError:
         print("No config.py — using defaults.")
 
