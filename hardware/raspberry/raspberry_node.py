@@ -25,7 +25,6 @@ import argparse
 import asyncio
 import json
 import logging
-import os
 import sys
 import time
 from pathlib import Path
@@ -33,10 +32,8 @@ from pathlib import Path
 # Путь к snin-public
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from hardware.esp32.command.cmd_handler import CmdHandler
 from hardware.esp32.command.command_consumer import CommandConsumer, TransportType
-from hardware.esp32.relay.alert_handler import AlertManager, AlertType
-from hardware.esp32.relay.device_handler import ESP32DeviceHandler
+from hardware.esp32.relay.alert_handler import AlertManager
 from hardware.esp32.bridge.bridge import ESP32Bridge
 
 logger = logging.getLogger("snin.rpi")
@@ -114,7 +111,7 @@ class RPiNode:
         if not self._bridge:
             return {"ok": False, "error": "bridge not started"}
         try:
-            payload = json.dumps({
+            json.dumps({
                 "action": cmd.action.value,
                 "params": cmd.params,
                 "seq": cmd.seq,
