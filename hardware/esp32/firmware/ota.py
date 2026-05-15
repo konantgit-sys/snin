@@ -29,12 +29,11 @@ kind:8013 format:
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import json
 import logging
 import os
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Callable
@@ -264,7 +263,6 @@ def _self_test():
     # 3. OTA client download
     client = OTAClient()
     fw_path = list(server.firmware_dir.glob("*.bin"))[0]
-    import asyncio
     ok = asyncio.run(client.download(str(fw_path), meta["crc32"]))
     assert ok
     assert client.state == OTAState.READY
