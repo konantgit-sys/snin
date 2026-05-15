@@ -290,3 +290,7 @@ if __name__ == "__main__":
             await bridge.stop()
 
     asyncio.run(run())
+
+
+# Алиас для обратной совместимости (test-imports использует ESPNowBridge)
+ESPNowBridge = ESP32Bridge
